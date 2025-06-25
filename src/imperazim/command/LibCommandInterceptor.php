@@ -19,7 +19,7 @@ use imperazim\command\enum\CommandEnumManager;
 * Intercepts AvailableCommandsPacket to dynamically modify command UI.
 * Applies constraints and rebuilds command overloads based on player permissions.
 */
-class LibCommandInterceptor implements PacketHandlerInterface {
+final class LibCommandInterceptor implements PacketHandlerInterface {
 
     /**
     * Gets the packet IDs this handler manages.
