@@ -1,0 +1,26 @@
+# Composer
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build Artefacts
+.phar/
+/build/
+*.phar
+
+# Logs / Tempdata
+*.log
+*.cache
+*.tmp
+
+# Local Settings
+*.local.yml
+.env
+
+# OS
+.DS_Store
+Thumbs.db/vendor/
+.env

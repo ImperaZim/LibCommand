@@ -1,0 +1,19 @@
+name: LibCommand
+version: 1.0.0
+
+authors:
+  - ImperaZim
+
+api: 5.0.0
+main: imperazim\command\LibCommand
+load: STARTUP
+
+depend:
+  - LibPacket
+
+extensions:
+  Core: ">=8.2"
+
+autoload:
+  psr-4:
+    imperazim\\command\\: src/imperazim/command

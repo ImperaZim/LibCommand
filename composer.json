@@ -1,0 +1,17 @@
+{
+    "name": "imperazim/libcommand",
+    "description": "Command library for PocketMine plugins",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "imperazim\\command\\": "src/imperazim/command"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10"
+    }
+}
