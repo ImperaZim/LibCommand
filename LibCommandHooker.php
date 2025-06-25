@@ -6,6 +6,7 @@ namespace imperazim\command;
 
 use imperazim\packet\LibPacket;
 use pocketmine\event\EventPriority;
+use pocketmine\plugin\PluginBase;
 
 /**
 * Load and start libcommand hooks
