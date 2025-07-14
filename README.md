@@ -1,143 +1,362 @@
 # LibCommand
-LibCommand is a small PocketMine-MP command library meant to simplify the process of creating commands while also enhancing the user experience. It provides an API for defining commands (and sub-commands) with rich argument types, permissions, and constraints, handling execution and failure cases automatically. LibCommand works with PocketMine servers and leverages network packet manipulation (via the **LibPacket** dependency) to, for example, enable client-side command suggestions and rendering. In practice, you integrate LibCommand into your plugin and use classes like `Command` and `SubCommand` to define command behavior in code, rather than writing separate entries in `plugin.yml`.
 
-## Installation Instructions
-
-* **Option 1 (Source / Development):** Download the LibCommand ZIP from GitHub and include its source code in your plugin’s project (for example, by putting the library files alongside your plugin code). You can use PocketMine’s *folder plugin* format (with DevTools) to load source folders directly. In that case, ensure the LibCommand files (with namespace `imperazim\command`) are in your plugin’s `src` folder. Then, in your plugin’s `onEnable()`, register LibCommand by calling:
-
-  ```php
-  \imperazim\command\LibCommand::getInstance()->registerInterceptor($this);
-  ```
-
-  This sets up LibCommand’s hooks for your plugin.
-
-* **Option 2 (PHAR):** Download the `LibCommand.phar` file from the GitHub *Releases* page and place it in your server’s `plugins/` directory. The PHAR packaging bundles the entire library into one file. According to the PocketMine documentation, you simply drop the `.phar` into `plugins/` and restart the server to install it. After placing the PHAR, be sure to still register LibCommand in your plugin’s `onEnable()` (as shown above) so your plugin can intercept commands.
-
-## Requirements
-LibCommand depends on the **LibPacket** library. Make sure LibPacket is installed or available on your server (for example, by including it via EasyLibrary or its own PHAR). LibPacket handles the low-level packet work (such as sending command data to clients), so LibCommand will not function properly without it.
-<p>
-    <a href="https://github.com/ImperaZim/LibPacket" ><img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=imperazim&repo=LibPacket&show_icons=true&theme=radical&hide_border=true&include_all_commits=true&count_private=true" >
-</a>
+<p align="center">
+  <img src="https://img.shields.io/badge/PocketMine--MP-5.0.0+-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/PHP-8.2+-777bb4?style=flat-square" />
+  <img src="https://img.shields.io/github/license/ImperaZim/LibCommand?style=flat-square" />
+  <img src="https://img.shields.io/github/issues/ImperaZim/LibCommand?style=flat-square" />
+  <img src="https://img.shields.io/github/stars/ImperaZim/LibCommand?style=flat-square" />
 </p>
 
-## Usage Examples
+---
 
-#### AdminCommand
+> **LibCommand** is an advanced library for creating modular, typed, and dynamic commands for PocketMine-MP plugins. Define commands, subcommands, arguments, and constraints programmatically, with full client UI integration via [LibPacket](https://github.com/ImperaZim/LibPacket).
 
-This example defines a root command `/admin` with one sub-command (`user`). In the `onBuild()` method you return metadata (name, description, subcommands). Here’s a simplified snippet (the actual code may include more in `onExecute` and failure handling):
+---
 
-```php
-public function onBuild(): array {
-    return [
-        'name' => 'admin',
-        'description' => 'Root administrative command',
-        'subcommands' => [
-            new UserSubCommand($this)
-        ]
-    ];
-}
-```
+## ✨ Technical Features
 
-This creates a command `/admin`. The `UserSubCommand` (below) handles the `/admin user ...` cases. In `onExecute()`, you might show usage or list available sub-commands:
+- Define commands and subcommands via code
+- Typed arguments (string, int, float, enum, player, item, boolean, etc)
+- Constraints (permission, cooldown, gamemode, world, console-only, etc)
+- Support for aliases, dynamic usage, automatic error messages
+- LibPacket integration for dynamic command UI
+- Extensible: create your own arguments and constraints
 
-```php
-public function onExecute(CommandResult $result): void {
-    $sender = $result->getSender();
-    $available = implode(', ', array_map(fn($cmd) => $cmd->getName(), $this->getSubCommands()));
-    $sender->sendMessage("Usage: /admin <{$available}>");
-}
-```
+---
 
-#### AdvancedTestCommand
+## ⚡ Installation & Requirements
 
-This example demonstrates a command with various argument types and aliases. In `onBuild()` you specify name, aliases, description, permission, and a list of arguments:
+- **PocketMine-MP** API 5.0.0+
+- **PHP** 8.2+
+- **LibPacket** (required)
 
-```php
-public function onBuild(): array {
-    return [
-        'name'        => 'advancedtest',
-        'aliases'     => ['at', 'fulltest'],
-        'description' => 'Demo command with all argument types',
-        'permission'  => DefaultPermissions::ROOT_OPERATOR,
-        'arguments'   => [
-            new PlayerArgument('player', false),
-            new ItemArgument('item', false),
-            new IntegerArgument('quantity', false, min: 1, max: 64),
-            new WorldArgument('world', true),
-            new FloatArgument('damage', true, min: 0.0, max: 100.0),
-            new StringArgument('message', true),
-            new BooleanArgument('visible', true),
-            new EnumArgument('color', true, ['red', 'blue', 'green']),
-        ],
-        'constraints' => [
-            new InGameConstraint()
-        ]
-    ];
-}
-```
+**Installation:**
+- As a library: place `imperazim/command` in your `src/` and register the autoload.
+- As a PHAR plugin: download the `.phar` and place it in `plugins/`.
 
-Here, `/advancedtest` (alias `/at`) accepts a player name, an item, an integer (1–64), optional world, optional float, optional string, optional boolean, and optional enum. In `onExecute()`, you would retrieve these arguments from `$result->getArgumentsList()` and perform your logic (the example sends a formatted message back to the sender).
+---
 
-#### PromoteSubCommand
+## 🚀 Basic Integration
 
-This is a sub-command example under `/admin user`. It promotes a player to operator. In `onBuild()`, you give it a name, description, and arguments:
-
-```php
-public function onBuild(): array {
-    return [
-        'name'        => 'promote',
-        'description' => 'Promote a player to operator',
-        'arguments'   => [
-            new PlayerArgument('player', false)
-        ]
-    ];
-}
-public function onExecute(CommandResult $result): void {
-    $target = $result->getArgumentsList()->get('player');
-    $result->getSender()->sendMessage("Promoting player {$target->getName()} to operator.");
-}
-```
-
-If the player argument is missing or invalid, LibCommand automatically triggers `onFailure()`, where you can send a usage message. For example:
-
-```php
-public function onFailure(CommandFailure $failure): void {
-    $failure->getSender()->sendMessage("Usage: /admin user promote <player>");
-}
-```
-
-#### UserSubCommand
-
-This sub-command groups user-related commands. Its `onBuild()` sets the name and adds `PromoteSubCommand` as a child:
-
-```php
-public function onBuild(): array {
-    return [
-        'name'        => 'user',
-        'description' => 'Manage users',
-        'subcommands' => [
-            new PromoteSubCommand($this)
-        ]
-    ];
-}
-public function onExecute(CommandResult $result): void {
-    // No subcommand given: show usage
-    $result->getSender()->sendMessage("Usage: /admin user <promote>");
-}
-```
-
-When the player types `/admin user promote <name>`, LibCommand will automatically dispatch to the `PromoteSubCommand`. If the player types `/admin user` without arguments or an unknown subcommand, `onExecute()` provides the usage string as shown.
-
-## Getting Started
-
-To use LibCommand in your plugin, first call its registration method in your main class (usually in `onEnable()`). For example:
+In your main plugin class:
 
 ```php
 public function onEnable(): void {
     \imperazim\command\LibCommand::getInstance()->registerInterceptor($this);
-    // Then register your commands with PocketMine:
-    $this->getServer()->getCommandMap()->register($this->getName(), new AdminCommand());
+    $this->getServer()->getCommandMap()->register($this->getName(), new MyCommand($this));
 }
 ```
 
-The pattern is similar to other command libraries: you register the LibCommand interceptor for your plugin, then use `$server->getCommandMap()->register()` to register each command instance. After doing this, LibCommand will intercept those commands and handle argument parsing, sub-commands, and execution based on your `onBuild()`/`onExecute()` definitions.
+---
+
+## 📚 Technical Examples
+
+### 1. Command without arguments
+
+```php
+class PingCommand extends Command {
+    public function onBuild(): array {
+        return [
+            'name' => 'ping',
+            'description' => 'Shows your ping'
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $result->getSender()->sendMessage("Your ping: 42ms");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 2. Command with arguments
+
+```php
+class TeleportCommand extends Command {
+    public function onBuild(): array {
+        return [
+            'name' => 'teleport',
+            'description' => 'Teleport to a player',
+            'arguments' => [
+                new PlayerArgument('target', false)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $target = $result->getArgumentsList()->get('target');
+        $result->getSender()->sendMessage("Teleporting to {$target->getName()}");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 3. Command with subcommands
+
+```php
+class AdminCommand extends Command {
+    public function onBuild(): array {
+        return [
+            'name' => 'admin',
+            'description' => 'Administrative commands',
+            'subcommands' => [
+                new KickSubCommand($this),
+                new BanSubCommand($this)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $result->getSender()->sendMessage("Use /admin <kick|ban>");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 4. Command with arguments and subcommands
+
+```php
+class WarpCommand extends Command {
+    public function onBuild(): array {
+        return [
+            'name' => 'warp',
+            'description' => 'Manage warps',
+            'arguments' => [
+                new StringArgument('name', true)
+            ],
+            'subcommands' => [
+                new SetWarpSubCommand($this),
+                new DelWarpSubCommand($this)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $name = $result->getArgumentsList()->get('name');
+        if ($name) {
+            $result->getSender()->sendMessage("Teleporting to warp: $name");
+        } else {
+            $result->getSender()->sendMessage("Use /warp <name> or /warp <set|del>");
+        }
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 5. Subcommand with arguments
+
+```php
+class KickSubCommand extends SubCommand {
+    public function onBuild(): array {
+        return [
+            'name' => 'kick',
+            'description' => 'Kick a player',
+            'arguments' => [
+                new PlayerArgument('target', false),
+                new StringArgument('reason', true)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $target = $result->getArgumentsList()->get('target');
+        $reason = $result->getArgumentsList()->get('reason', 'No reason');
+        $result->getSender()->sendMessage("Player {$target->getName()} kicked. Reason: $reason");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 6. Subcommand with subcommands
+
+```php
+class UserSubCommand extends SubCommand {
+    public function onBuild(): array {
+        return [
+            'name' => 'user',
+            'description' => 'Manage users',
+            'subcommands' => [
+                new PromoteSubCommand($this),
+                new DemoteSubCommand($this)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $result->getSender()->sendMessage("Use /admin user <promote|demote>");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+### 7. Command with arguments and subcommands (and subcommands with arguments)
+
+```php
+class GroupCommand extends Command {
+    public function onBuild(): array {
+        return [
+            'name' => 'group',
+            'description' => 'Manage groups',
+            'arguments' => [
+                new StringArgument('group', true)
+            ],
+            'subcommands' => [
+                new AddUserSubCommand($this),
+                new RemoveUserSubCommand($this)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $group = $result->getArgumentsList()->get('group');
+        if ($group) {
+            $result->getSender()->sendMessage("Group info: $group");
+        } else {
+            $result->getSender()->sendMessage("Use /group <group> or /group <adduser|removeuser>");
+        }
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+
+class AddUserSubCommand extends SubCommand {
+    public function onBuild(): array {
+        return [
+            'name' => 'adduser',
+            'description' => 'Add user to group',
+            'arguments' => [
+                new PlayerArgument('user', false)
+            ]
+        ];
+    }
+    public function onExecute(CommandResult $result): void {
+        $user = $result->getArgumentsList()->get('user');
+        $result->getSender()->sendMessage("User {$user->getName()} added to group.");
+    }
+    public function onFailure(CommandFailure $failure): void {
+        $failure->getSender()->sendMessage($failure->getMessage());
+    }
+}
+```
+
+---
+
+## 🧑‍💻 Advanced Examples
+
+### Custom Argument
+
+```php
+class UppercaseStringArgument extends Argument {
+    public function getTypeName(): string { return 'upperstring'; }
+    public function getNetworkType(): int { return AvailableCommandsPacket::ARG_TYPE_STRING; }
+    public function canParse(string $testString, CommandSender $sender): bool {
+        return strtoupper($testString) === $testString;
+    }
+    public function parse(string $argument, CommandSender $sender): mixed {
+        return strtoupper($argument);
+    }
+}
+// Usage:
+new UppercaseStringArgument('shout', false);
+```
+
+### Custom Constraint
+
+```php
+class OnlyAtNightConstraint extends Constraint {
+    public function isSatisfiedBy(CommandSender $sender): bool {
+        // Example: only allow the command at night
+        return (date('H') >= 18 || date('H') < 6);
+    }
+    public function onFailure(CommandSender $sender): void {
+        $sender->sendMessage('This command can only be used at night!');
+    }
+    public function onSuccess(CommandSender $sender): void {}
+}
+// Usage:
+new OnlyAtNightConstraint();
+```
+
+### Dynamic Enum
+
+```php
+$colors = ['red', 'blue', 'green', 'yellow'];
+new EnumArgument('color', false, $colors);
+```
+
+### Advanced LibPacket Integration
+
+- Use dynamic enums and argument suggestions for client-side autocomplete.
+- Combine constraints for advanced permission logic.
+- Create commands that change behavior based on player context.
+
+---
+
+## 🧩 Argument API
+
+- **StringArgument($name, $optional)**
+- **IntegerArgument($name, $optional, $min, $max)**
+- **FloatArgument($name, $optional, $min, $max)**
+- **BooleanArgument($name, $optional)**
+- **EnumArgument($name, $optional, $values)**
+- **PlayerArgument($name, $optional)**
+- **ItemArgument($name, $optional)**
+- **WorldArgument($name, $optional)**
+- **TargetArgument($name, $optional)**
+
+---
+
+## 🔒 Constraint API
+
+- **PermissionConstraint($permission)**
+- **CooldownConstraint($seconds)**
+- **InGameConstraint()**
+- **RequireConsoleConstraint()**
+- **WorldConstraint($world)**
+- **GameModeConstraint($gamemode)**
+
+---
+
+## 💡 Advanced Tips
+
+- Use subcommands to organize complex commands.
+- Combine arguments and subcommands for maximum flexibility.
+- Handle failures in `onFailure()` for clear user feedback.
+- Create your own arguments and constraints by extending the base classes.
+- Use dynamic enums for contextual suggestions in client autocomplete.
+
+---
+
+## 🤝 License & Contributing
+
+MIT. Pull requests and suggestions are welcome!
+
+---
+
+## 🔗 Useful Links
+
+- [PocketMine-MP](https://pmmp.io/)
+- [LibPacket](https://github.com/ImperaZim/LibPacket)
+
+---
+
+Questions? Open an issue or contribute on GitHub!
