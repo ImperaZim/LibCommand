@@ -47,11 +47,6 @@ abstract class SubCommand {
         foreach ($this->config['arguments'] ?? [] as $argument) {
             $this->addArgument($argument);
         }
-
-        // Inherit parent constraints
-        foreach ($parent->getConstraints() as $constraint) {
-            $this->addConstraint($constraint);
-        }
     }
 
     /**
