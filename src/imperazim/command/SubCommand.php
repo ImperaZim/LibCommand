@@ -102,17 +102,6 @@ abstract class SubCommand {
     * @param array $rawArgs Raw arguments passed to the subcommand
     */
     public function execute(CommandSender $sender, string $label, array $rawArgs): void {
-        // Check constraints
-        $res = $this->testConstraints($sender);
-        if (!$res['success']) {
-            $this->onFailure(new CommandFailure(
-                $sender,
-                CommandFailure::CONSTRAINT_FAILED,
-                ['failed_constraints' => $res['failed_constraints']]
-            ));
-            return;
-        }
-
         // Handle child subcommands
         if (!empty($this->getSubCommands()) && !empty($rawArgs)) {
             $key = strtolower(array_shift($rawArgs));
@@ -124,6 +113,16 @@ abstract class SubCommand {
                     return;
                 }
             }
+        }
+        // Check constraints
+        $res = $this->testConstraints($sender);
+        if (!$res['success']) {
+            $this->onFailure(new CommandFailure(
+                $sender,
+                CommandFailure::CONSTRAINT_FAILED,
+                ['failed_constraints' => $res['failed_constraints']]
+            ));
+            return;
         }
 
         // Parse and validate arguments

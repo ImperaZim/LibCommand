@@ -93,7 +93,7 @@ abstract class Command extends PMMPCommand {
     string $label,
     array $rawArgs
   ): void {
-    // Handle subcommands first (before checking parent constraints)
+    // Handle subcommands
     if (!empty($rawArgs)) {
       $key = strtolower(array_shift($rawArgs));
       foreach ($this->getSubCommands() as $sub) {
@@ -105,8 +105,8 @@ abstract class Command extends PMMPCommand {
         }
       }
     }
-
-    // Check constraints only for the main command (not subcommands)
+      
+    // Check constraints
     $constraintResult = $this->testConstraints($sender);
     if (!$constraintResult["success"]) {
       $this->onFailure(
