@@ -6,8 +6,8 @@ namespace imperazim\command\dynamic;
 
 use Closure;
 use pocketmine\permission\DefaultPermissions;
-use imperazim\comman\Command;
-use imperazim\comman\SubCommand;
+use imperazim\command\Command;
+use imperazim\command\SubCommand;
 use imperazim\command\argument\Argument;
 use imperazim\command\constraint\Constraint;
 use imperazim\command\result\CommandResult;

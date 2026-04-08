@@ -33,4 +33,11 @@ abstract class Constraint {
     * @return bool True if satisfied, false otherwise
     */
     abstract public function isSatisfiedBy(CommandSender $sender): bool;
+
+    /**
+    * Gets a human-readable description of the constraint
+    *
+    * @return string Constraint description
+    */
+    abstract public function getDescription(): string;
 }

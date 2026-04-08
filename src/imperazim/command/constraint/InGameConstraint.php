@@ -13,12 +13,22 @@ use pocketmine\command\CommandSender;
 */
 class InGameConstraint extends Constraint {
     /**
+    * @param string|null $customMessage Optional custom failure message
+    * @param string|null $customDescription Optional custom description
+    */
+    public function __construct(
+        private ?string $customMessage = null,
+        private ?string $customDescription = null
+    ) {}
+
+    /**
     * Notifies sender about console usage restriction
     *
     * @param CommandSender $sender Command executor
     */
     public function onFailure(CommandSender $sender): void {
-        $sender->sendMessage(TextFormat::RED . 'This command can only be used in-game');
+        $message = $this->customMessage ?? TextFormat::RED . 'This command can only be used in-game';
+        $sender->sendMessage($message);
     }
 
     /**
@@ -29,5 +39,14 @@ class InGameConstraint extends Constraint {
     */
     public function isSatisfiedBy(CommandSender $sender): bool {
         return $sender instanceof Player;
+    }
+
+    /**
+    * Gets description of this constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        return $this->customDescription ?? "This command can only be used in-game";
     }
 }

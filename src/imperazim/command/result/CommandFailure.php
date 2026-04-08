@@ -27,6 +27,9 @@ final class CommandFailure {
     /** Failure type: Runtime execution error */
     public const EXECUTION_ERROR = 3;
 
+    /** Failure type: Command is on cooldown */
+    public const COOLDOWN = 4;
+
     /**
     * @var int[] Valid failure type identifiers
     */
@@ -34,7 +37,8 @@ final class CommandFailure {
         self::INVALID_ARGUMENT,
         self::MISSING_ARGUMENT,
         self::CONSTRAINT_FAILED,
-        self::EXECUTION_ERROR
+        self::EXECUTION_ERROR,
+        self::COOLDOWN
     ];
 
     /**

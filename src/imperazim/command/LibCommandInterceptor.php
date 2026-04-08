@@ -6,10 +6,11 @@ namespace imperazim\command;
 
 use pocketmine\Server;
 use pocketmine\player\Player;
-use pocketmine\event\EventPriority;
 use pocketmine\command\CommandSender;
 use pocketmine\network\mcpe\protocol\AvailableCommandsPacket;
-use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
+use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketAssembler;
+use pocketmine\network\mcpe\protocol\serializer\AvailableCommandsPacketDisassembler;
+use pocketmine\network\mcpe\protocol\types\command\CommandHardEnum;
 use pocketmine\network\mcpe\protocol\types\command\CommandOverload;
 use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
 use imperazim\packet\handler\PacketHandlerInterface;
@@ -20,6 +21,9 @@ use imperazim\command\enum\CommandEnumManager;
 * Applies constraints and rebuilds command overloads based on player permissions.
 */
 final class LibCommandInterceptor implements PacketHandlerInterface {
+
+    /** @var array<int, bool> Track processed packets to avoid recursion */
+    private static array $processedPackets = [];
 
     /**
     * Gets the packet IDs this handler manages.
@@ -43,16 +47,27 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
             return true;
         }
 
+        $packetId = spl_object_id($packet);
+        
+        // Skip if already processed to avoid recursion
+        if (isset(self::$processedPackets[$packetId])) {
+            return true;
+        }
+
         $player = $session->getPlayer();
         if (!($player instanceof Player)) {
             return true;
         }
 
-        $server = Server::getInstance();
-        foreach ($packet->commandData as $name => $data) {
-            $cmd = $server->getCommandMap()->getCommand($name);
+        // Mark as processing
+        self::$processedPackets[$packetId] = true;
 
-            // Skip non-custom commands
+        $server = Server::getInstance();
+        $disassembled = AvailableCommandsPacketDisassembler::disassemble($packet);
+        $commandDataList = $disassembled->commandData;
+        
+        foreach($commandDataList as $index => $commandData) {
+            $cmd = $server->getCommandMap()->getCommand($commandData->getName());
             if (!($cmd instanceof Command)) {
                 continue;
             }
@@ -60,18 +75,25 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
             // Apply constraints
             foreach ($cmd->getConstraints() as $constraint) {
                 if (!$constraint->isSatisfiedBy($player)) {
-                    unset($packet->commandData[$name]);
+                    unset($commandDataList[$index]);
                     continue 2;
                 }
             }
 
             // Rebuild command UI
-            $packet->commandData[$name]->overloads = $this->getOverloads($player, $cmd);
+            $commandData->overloads = $this->getOverloads($player, $cmd);
         }
 
-        // Update dynamic enums
-        $packet->softEnums = CommandEnumManager::getEnums();
-        return true;
+        // Send modified packet
+        $modifiedPacket = AvailableCommandsPacketAssembler::assemble($commandDataList, [], CommandEnumManager::getEnums());
+        self::$processedPackets[spl_object_id($modifiedPacket)] = true;
+        
+        $session->sendDataPacket($modifiedPacket);
+        
+        // Clean up old packet ID from tracking
+        unset(self::$processedPackets[$packetId]);
+        
+        return false; // Cancel original packet
     }
 
     /**
@@ -95,11 +117,12 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
             }
 
             // Create subcommand parameter
-            $param = new CommandParameter();
-            $param->paramName = $sub->getName();
-            $param->paramType = AvailableCommandsPacket::ARG_FLAG_ENUM | AvailableCommandsPacket::ARG_FLAG_VALID;
-            $param->isOptional = false;
-            $param->enum = new CommandEnum($sub->getName(), [$sub->getName()]);
+            $param = CommandParameter::enum(
+				$sub->getName(),
+				new CommandHardEnum($sub->getName(), [$sub->getName()]),
+				0,
+				optional: false
+			);
 
             // Recursively process child subcommands
             $child = $this->getOverloads($sender, $sub);
@@ -132,10 +155,14 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
                 $param = clone $argument->getParameterData();
 
                 // Handle enums
-                if (isset($param->enum) && $param->enum instanceof CommandEnum) {
-                    $ref = new \ReflectionProperty(CommandEnum::class, 'enumName');
-                    $ref->setAccessible(true);
-                    $ref->setValue($param->enum, 'enum#' . spl_object_id($param->enum));
+                if(isset($param->enum) && $param->enum instanceof CommandHardEnum){
+					//TODO: This hack is not needed on PM's account as of 5.36.0, but since enums are initialised
+					//with an empty name in StringEnumArgument (and I don't know why), it's best to preserve the
+					//original behaviour
+					$param->enum = new CommandHardEnum(
+						"enum#" . spl_object_id($param->enum),
+						$param->enum->getValues()
+					);
                 }
                 $params[] = $param;
             }

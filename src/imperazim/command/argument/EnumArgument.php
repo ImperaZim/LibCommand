@@ -6,7 +6,7 @@ namespace imperazim\command\argument;
 
 use pocketmine\command\CommandSender;
 use pocketmine\network\mcpe\protocol\AvailableCommandsPacket;
-use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
+use pocketmine\network\mcpe\protocol\types\command\CommandHardEnum;
 use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
 use imperazim\command\exception\ArgumentException;
 
@@ -60,9 +60,7 @@ class EnumArgument extends Argument {
     * @return CommandParameter Network parameter data with enum
     */
     public function getParameterData(): CommandParameter {
-        $param = parent::getParameterData();
-        $param->enum = new CommandEnum($this->getName() . "Enum", $this->choices);
-        return $param;
+        return CommandParameter::enum($name, new CommandHardEnum("", $this->getChoices()), 0, $this->optional);
     }
 
     /**

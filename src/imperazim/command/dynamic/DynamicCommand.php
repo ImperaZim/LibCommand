@@ -7,8 +7,8 @@ namespace imperazim\command\dynamic;
 use Closure;
 use pocketmine\plugin\Plugin;
 use pocketmine\permission\DefaultPermissions;
-use imperazim\comman\Command;
-use imperazim\comman\SubCommand;
+use imperazim\command\Command;
+use imperazim\command\SubCommand;
 use imperazim\command\argument\Argument;
 use imperazim\command\constraint\Constraint;
 use imperazim\command\result\CommandResult;
@@ -72,24 +72,26 @@ class DynamicCommand extends Command {
     }
 
     /**
-    * Sets the command description
+    * Sets the command description (fluent)
     *
     * @param string $description Command description
     * @return $this
     */
-    public function setDescription(string $description): self {
+    public function withDescription(string $description): self {
         $this->config['description'] = $description;
+        parent::setDescription($description);
         return $this;
     }
 
     /**
-    * Sets command aliases
+    * Sets command aliases (fluent)
     *
     * @param string[] $aliases Alternative command names
     * @return $this
     */
-    public function setAliases(array $aliases): self {
+    public function withAliases(array $aliases): self {
         $this->config['aliases'] = $aliases;
+        parent::setAliases($aliases);
         return $this;
     }
 
@@ -99,8 +101,20 @@ class DynamicCommand extends Command {
     * @param string $permission Permission node
     * @return $this
     */
-    public function setPermission(string $permission): self {
+    public function setPermission(?string $permission): void {
+        $this->config['permission'] = $permission ?? DefaultPermissions::ROOT_USER;
+        parent::setPermission($permission);
+    }
+
+    /**
+    * Sets required permission (fluent)
+    *
+    * @param string $permission Permission node
+    * @return $this
+    */
+    public function withPermission(string $permission): self {
         $this->config['permission'] = $permission;
+        parent::setPermission($permission);
         return $this;
     }
 
@@ -193,9 +207,9 @@ class DynamicCommand extends Command {
     /**
     * Registers the command with PocketMine's command map
     */
-    public function register(): void {
-        $cmdMap = $this->plugin->getServer()->getCommandMap();
-        $namespace = $this->plugin->getDescription()->getName();
-        $cmdMap->register($namespace, $this->plugin);
+    public function registerCommand(): void {
+        $cmdMap = $this->getPlugin()->getServer()->getCommandMap();
+        $namespace = $this->getPlugin()->getDescription()->getName();
+        $cmdMap->register($namespace, $this);
     }
 }

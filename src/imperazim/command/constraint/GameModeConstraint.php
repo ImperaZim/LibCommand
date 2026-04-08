@@ -15,8 +15,14 @@ use pocketmine\command\CommandSender;
 class GameModeConstraint extends Constraint {
     /**
     * @param GameMode $gameMode Required game mode
+    * @param string|null $customMessage Optional custom failure message
+    * @param string|null $customDescription Optional custom description
     */
-    public function __construct(private GameMode $gameMode) {}
+    public function __construct(
+        private GameMode $gameMode,
+        private ?string $customMessage = null,
+        private ?string $customDescription = null
+    ) {}
 
     /**
     * Notifies sender about incorrect game mode
@@ -24,8 +30,12 @@ class GameModeConstraint extends Constraint {
     * @param CommandSender $sender Command executor
     */
     public function onFailure(CommandSender $sender): void {
-        $modeName = $this->getModeName();
-        $sender->sendMessage(TextFormat::RED . "You must be in {$modeName} mode to use this command");
+        if ($this->customMessage !== null) {
+            $sender->sendMessage($this->customMessage);
+        } else {
+            $modeName = $this->getModeName();
+            $sender->sendMessage(TextFormat::RED . "You must be in {$modeName} mode to use this command");
+        }
     }
 
     /**
@@ -53,4 +63,17 @@ class GameModeConstraint extends Constraint {
             default => "Unknown"
             };
         }
+
+    /**
+    * Gets description of this constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        if ($this->customDescription !== null) {
+            return $this->customDescription;
+        }
+        $modeName = $this->getModeName();
+        return "You must be in {$modeName} mode";
     }
+}

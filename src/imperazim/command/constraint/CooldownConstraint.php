@@ -21,8 +21,14 @@ class CooldownConstraint extends Constraint {
 
     /**
     * @param float $cooldownSeconds Cooldown duration in seconds
+    * @param string|null $customMessage Optional custom failure message (use {time} placeholder for remaining time)
+    * @param string|null $customDescription Optional custom description
     */
-    public function __construct(private float $cooldownSeconds) {}
+    public function __construct(
+        private float $cooldownSeconds,
+        private ?string $customMessage = null,
+        private ?string $customDescription = null
+    ) {}
 
     /**
     * Records successful command execution time
@@ -40,7 +46,12 @@ class CooldownConstraint extends Constraint {
     */
     public function onFailure(CommandSender $sender): void {
         $remaining = $this->getRemainingCooldown($sender);
-        $sender->sendMessage(TextFormat::RED . "Please wait {$remaining} seconds before using this command again");
+        if ($this->customMessage !== null) {
+            $message = str_replace('{time}', (string)$remaining, $this->customMessage);
+            $sender->sendMessage($message);
+        } else {
+            $sender->sendMessage(TextFormat::RED . "Please wait {$remaining} seconds before using this command again");
+        }
     }
 
     /**
@@ -79,5 +90,14 @@ class CooldownConstraint extends Constraint {
         $lastTime = self::$lastUsed[$key] ?? 0;
         $elapsed = microtime(true) - $lastTime;
         return max(0, number_format($this->cooldownSeconds - $elapsed, 1));
+    }
+
+    /**
+    * Gets description of this constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        return $this->customDescription ?? "Cooldown of {$this->cooldownSeconds} seconds between uses";
     }
 }

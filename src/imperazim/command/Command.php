@@ -16,6 +16,7 @@ use imperazim\command\constraint\Constraint;
 use imperazim\command\constraint\PermissionConstraint;
 use imperazim\command\result\CommandResult;
 use imperazim\command\result\CommandFailure;
+use imperazim\command\HelpGenerator;
 
 /**
  * Abstract base class for custom commands.
@@ -30,6 +31,15 @@ abstract class Command extends PMMPCommand {
   /** @var Plugin The plugin that owns this command */
   private readonly Plugin $plugin;
 
+  /** @var array Custom messages for command failures */
+  private array $messages = [];
+
+  /** @var float|null Command cooldown in seconds */
+  private ?float $cooldown = null;
+
+  /** @var array Last usage timestamps per sender */
+  private static array $cooldowns = [];
+
   /**
    * Constructor.
    *
@@ -43,6 +53,12 @@ abstract class Command extends PMMPCommand {
     $description = $config["description"] ?? "";
     $aliases = $config["aliases"] ?? [];
     $permission = $config["permission"] ?? DefaultPermissions::ROOT_USER;
+
+    // Store custom messages
+    $this->messages = $config["messages"] ?? [];
+
+    // Store cooldown if provided
+    $this->cooldown = $config["cooldown"] ?? null;
 
     parent::__construct(
       $name,
@@ -82,6 +98,96 @@ abstract class Command extends PMMPCommand {
   }
 
   /**
+   * Gets a custom message by key.
+   *
+   * @param string $key The message key
+   * @param string $default Default message if key not found
+   * @return string The message
+   */
+  public function getMessage(string $key, string $default = ""): string {
+    return $this->messages[$key] ?? $default;
+  }
+
+  /**
+   * Sets a custom message.
+   *
+   * @param string $key The message key
+   * @param string $message The message text
+   */
+  public function setMessage(string $key, string $message): void {
+    $this->messages[$key] = $message;
+  }
+
+  /**
+   * Generates help text for this command.
+   *
+   * @param string $format The format style (detailed, compact, usage)
+   * @return string The help text
+   */
+  public function getHelp(string $format = "detailed"): string {
+    return HelpGenerator::generate($this, $format);
+  }
+
+  /**
+   * Checks if sender is on cooldown.
+   *
+   * @param CommandSender $sender The sender to check
+   * @return bool True if on cooldown
+   */
+  private function isOnCooldown(CommandSender $sender): bool {
+    if ($this->cooldown === null) {
+      return false;
+    }
+
+    $name = $sender->getName();
+    $key = $this->getName() . ":" . $name;
+
+    if (!isset(self::$cooldowns[$key])) {
+      return false;
+    }
+
+    $elapsed = microtime(true) - self::$cooldowns[$key];
+    return $elapsed < $this->cooldown;
+  }
+
+  /**
+   * Gets remaining cooldown time.
+   *
+   * @param CommandSender $sender The sender to check
+   * @return float Remaining seconds
+   */
+  private function getRemainingCooldown(CommandSender $sender): float {
+    if ($this->cooldown === null) {
+      return 0.0;
+    }
+
+    $name = $sender->getName();
+    $key = $this->getName() . ":" . $name;
+
+    if (!isset(self::$cooldowns[$key])) {
+      return 0.0;
+    }
+
+    $elapsed = microtime(true) - self::$cooldowns[$key];
+    return max(0.0, $this->cooldown - $elapsed);
+  }
+
+  /**
+   * Updates sender's cooldown.
+   *
+   * @param CommandSender $sender The sender
+   */
+  private function updateCooldown(CommandSender $sender): void {
+    if ($this->cooldown === null) {
+      return;
+    }
+
+    $name = $sender->getName();
+    $key = $this->getName() . ":" . $name;
+    self::$cooldowns[$key] = microtime(true);
+  }
+
+  /**
    * Executes the command.
    *
    * @param CommandSender $sender The command sender
@@ -93,6 +199,16 @@ abstract class Command extends PMMPCommand {
     string $label,
     array $rawArgs
   ): void {
+    // Check cooldown
+    if ($this->isOnCooldown($sender)) {
+      $remaining = $this->getRemainingCooldown($sender);
+      $this->onFailure(
+        new CommandFailure($sender, CommandFailure::COOLDOWN, [
+          "remaining" => $remaining,
+        ])
+      );
+      return;
+    }
     // Handle subcommands
     if (!empty($rawArgs)) {
       $key = strtolower(array_shift($rawArgs));
@@ -133,6 +249,9 @@ abstract class Command extends PMMPCommand {
     $parsedArgs = $this->parseArguments($sender, $rawArgs);
 
     try {
+      // Update cooldown before execution
+      $this->updateCooldown($sender);
+      
       // Execute command logic
       $this->onExecute(new CommandResult($sender, $parsedArgs, $label));
     } catch (\Throwable $e) {

@@ -13,8 +13,14 @@ use pocketmine\command\CommandSender;
 class PermissionConstraint extends Constraint {
     /**
     * @param string $permission Required permission node
+    * @param string|null $customMessage Optional custom failure message
+    * @param string|null $customDescription Optional custom description
     */
-    public function __construct(private string $permission) {}
+    public function __construct(
+        private string $permission,
+        private ?string $customMessage = null,
+        private ?string $customDescription = null
+    ) {}
 
     /**
     * Notifies sender about missing permission
@@ -22,7 +28,8 @@ class PermissionConstraint extends Constraint {
     * @param CommandSender $sender Command executor
     */
     public function onFailure(CommandSender $sender): void {
-        $sender->sendMessage(TextFormat::RED . "You don't have permission to use this command!");
+        $message = $this->customMessage ?? TextFormat::RED . "You don't have permission to use this command!";
+        $sender->sendMessage($message);
     }
 
     /**
@@ -33,5 +40,14 @@ class PermissionConstraint extends Constraint {
     */
     public function isSatisfiedBy(CommandSender $sender): bool {
         return $sender->hasPermission($this->permission);
+    }
+
+    /**
+    * Gets description of this constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        return $this->customDescription ?? "Required permission: {$this->permission}";
     }
 }

@@ -19,8 +19,14 @@ class WorldConstraint extends Constraint {
 
     /**
     * @param string|string[] $worldNames Single world name or array of allowed worlds
+    * @param string|null $customMessage Optional custom failure message
+    * @param string|null $customDescription Optional custom description
     */
-    public function __construct(string|array $worldNames) {
+    public function __construct(
+        string|array $worldNames,
+        private ?string $customMessage = null,
+        private ?string $customDescription = null
+    ) {
         $this->allowedWorlds = (array) $worldNames;
     }
 
@@ -30,8 +36,12 @@ class WorldConstraint extends Constraint {
     * @param CommandSender $sender Command executor
     */
     public function onFailure(CommandSender $sender): void {
-        $worlds = implode(', ', $this->allowedWorlds);
-        $sender->sendMessage(TextFormat::RED . "You must be in one of these worlds: $worlds");
+        if ($this->customMessage !== null) {
+            $sender->sendMessage($this->customMessage);
+        } else {
+            $worlds = implode(', ', $this->allowedWorlds);
+            $sender->sendMessage(TextFormat::RED . "You must be in one of these worlds: $worlds");
+        }
     }
 
     /**
@@ -43,5 +53,18 @@ class WorldConstraint extends Constraint {
     public function isSatisfiedBy(CommandSender $sender): bool {
         return ($sender instanceof Player) &&
         in_array($sender->getWorld()->getFolderName(), $this->allowedWorlds, true);
+    }
+
+    /**
+    * Gets description of this constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        if ($this->customDescription !== null) {
+            return $this->customDescription;
+        }
+        $worlds = implode(', ', $this->allowedWorlds);
+        return "You must be in one of these worlds: $worlds";
     }
 }

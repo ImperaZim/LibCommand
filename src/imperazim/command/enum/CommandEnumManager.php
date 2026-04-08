@@ -6,7 +6,7 @@ use pocketmine\Server;
 use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\ClientboundPacket;
 use pocketmine\network\mcpe\protocol\UpdateSoftEnumPacket;
-use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
+use pocketmine\network\mcpe\protocol\types\command\CommandSoftEnum;
 
 /**
 * Manages soft command enums for dynamic command suggestions
@@ -16,7 +16,7 @@ use pocketmine\network\mcpe\protocol\types\command\CommandEnum;
 class CommandEnumManager {
     
     /**
-    * @var CommandEnum[] Registered soft enums indexed by name
+    * @var CommandSoftEnum[] Registered soft enums indexed by name
     */
     private static array $enums = [];
 
@@ -24,16 +24,16 @@ class CommandEnumManager {
     * Retrieves a soft enum by its name
     *
     * @param string $name Enum identifier
-    * @return CommandEnum|null Enum instance or null if not found
+    * @return CommandSoftEnum|null Enum instance or null if not found
     */
-    public static function getEnumByName(string $name): ?CommandEnum {
+    public static function getEnumByName(string $name): ?CommandSoftEnum {
         return self::$enums[$name] ?? null;
     }
 
     /**
     * Gets all registered soft enums
     *
-    * @return CommandEnum[] Array of enum instances
+    * @return CommandSoftEnum[] Array of enum instances
     */
     public static function getEnums(): array {
         return self::$enums;
@@ -42,10 +42,10 @@ class CommandEnumManager {
     /**
     * Registers a new soft enum
     *
-    * @param CommandEnum $enum Enum instance to register
+    * @param CommandSoftEnum $enum Enum instance to register
     * @throws CommandException If enum with same name already exists
     */
-    public static function addEnum(CommandEnum $enum): void {
+    public static function addEnum(CommandSoftEnum $enum): void {
         $name = $enum->getName();
 
         if (isset(self::$enums[$name])) {
@@ -68,7 +68,7 @@ class CommandEnumManager {
             throw new CommandException("Unknown enum '{$enumName}'");
         }
 
-        $enum = new CommandEnum($enumName, $values);
+        $enum = new CommandSoftEnum($enumName, $values);
         self::$enums[$enumName] = $enum;
         self::broadcastUpdate($enum, UpdateSoftEnumPacket::TYPE_SET);
     }
@@ -92,10 +92,10 @@ class CommandEnumManager {
     /**
     * Broadcasts enum changes to all online players
     *
-    * @param CommandEnum $enum Enum instance to broadcast
+    * @param CommandSoftEnum $enum Enum instance to broadcast
     * @param int $updateType Update type (add/set/remove)
     */
-    private static function broadcastUpdate(CommandEnum $enum, int $updateType): void {
+    private static function broadcastUpdate(CommandSoftEnum $enum, int $updateType): void {
         $packet = new UpdateSoftEnumPacket();
         $packet->enumName = $enum->getName();
         $packet->values = $enum->getValues();

@@ -11,6 +11,7 @@ use imperazim\command\result\CommandFailure;
 use imperazim\command\traits\ArgumentableTrait;
 use imperazim\command\traits\ConstraintableTrait;
 use imperazim\command\constraint\PermissionConstraint;
+use pocketmine\plugin\Plugin;
 
 /**
 * Represents a subcommand within a main command.

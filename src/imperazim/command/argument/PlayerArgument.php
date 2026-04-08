@@ -16,6 +16,26 @@ use imperazim\command\exception\ArgumentException;
 * Matches players by name prefix (case-insensitive)
 */
 final class PlayerArgument extends Argument {
+    /**
+    * Constructs a player argument
+    *
+    * @param string $name Argument name
+    * @param bool $optional Whether argument is optional
+    * @param mixed $default Default value (only for optional arguments)
+    * @param string $description Argument description for help
+    * @param array $aliases Alternative names for this argument
+    * @param callable|null $validator Custom validation function
+    */
+    public function __construct(
+        string $name,
+        bool $optional = false,
+        mixed $default = null,
+        string $description = '',
+        array $aliases = [],
+        ?callable $validator = null
+    ) {
+        parent::__construct($name, $optional, $default, $description, $aliases, $validator);
+    }
 
     /**
     * Gets the human-readable type name

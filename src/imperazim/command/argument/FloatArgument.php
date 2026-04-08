@@ -20,16 +20,24 @@ final class FloatArgument extends Argument {
     *
     * @param string $name Argument name
     * @param bool $optional Whether argument is optional
+    * @param mixed $default Default value (only for optional arguments)
+    * @param string $description Argument description for help
+    * @param array $aliases Alternative names for this argument
+    * @param callable|null $validator Custom validation function
     * @param float|null $min Minimum allowed value (inclusive)
     * @param float|null $max Maximum allowed value (inclusive)
     */
     public function __construct(
         string $name,
         bool $optional = false,
+        mixed $default = null,
+        string $description = '',
+        array $aliases = [],
+        ?callable $validator = null,
         private ?float $min = null,
         private ?float $max = null
     ) {
-        parent::__construct($name, $optional);
+        parent::__construct($name, $optional, $default, $description, $aliases, $validator);
     }
 
     /**

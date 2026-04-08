@@ -21,25 +21,33 @@ abstract class Argument {
     *
     * @param string $name Argument name (must be unique per command)
     * @param bool $optional Whether the argument is optional
+    * @param mixed $default Default value when argument is not provided (only for optional arguments)
+    * @param string $description Human-readable description of the argument
+    * @param array $aliases Alternative names for this argument
+    * @param callable|null $validator Custom validation function (receives value, returns bool)
     * @param CommandParameter|null $parameterData Pre-configured network parameter data
     *
-    * @throws ArgumentException If argument name contains spaces
+    * @throws ArgumentException If argument name contains spaces or default provided for required argument
     */
     public function __construct(
         private string $name,
         private bool $optional = false,
+        private mixed $default = null,
+        private string $description = '',
+        private array $aliases = [],
+        private $validator = null,
         private ?CommandParameter $parameterData = null
     ) {
         if (str_contains($name, ' ')) {
             throw new ArgumentException("Argument name cannot contain spaces: '{$name}'");
         }
 
+        if (!$optional && $default !== null) {
+            throw new ArgumentException("Cannot set default value for required argument: '{$name}'");
+        }
+
         if ($this->parameterData === null) {
-            $param = new CommandParameter();
-            $param->paramName = $this->name;
-            $param->paramType = AvailableCommandsPacket::ARG_FLAG_VALID | $this->getNetworkType();
-            $param->isOptional = $this->optional;
-            $this->parameterData = $param;
+            $this->parameterData = CommandParameter::standard($name, $this->getNetworkType(), 0, $this->isOptional());
         }
     }
 
@@ -59,6 +67,56 @@ abstract class Argument {
     */
     public function isOptional(): bool {
         return $this->optional;
+    }
+
+    /**
+    * Gets the default value for optional arguments
+    *
+    * @return mixed Default value or null
+    */
+    public function getDefault(): mixed {
+        return $this->default;
+    }
+
+    /**
+    * Gets the argument description
+    *
+    * @return string Description text
+    */
+    public function getDescription(): string {
+        return $this->description;
+    }
+
+    /**
+    * Gets the argument aliases
+    *
+    * @return array Array of alternative names
+    */
+    public function getAliases(): array {
+        return $this->aliases;
+    }
+
+    /**
+    * Checks if a name matches this argument (including aliases)
+    *
+    * @param string $name Name to check
+    * @return bool True if matches
+    */
+    public function matchesName(string $name): bool {
+        return $name === $this->name || in_array($name, $this->aliases, true);
+    }
+
+    /**
+    * Validates value using custom validator if provided
+    *
+    * @param mixed $value Value to validate
+    * @return bool True if valid
+    */
+    public function validate(mixed $value): bool {
+        if ($this->validator !== null) {
+            return ($this->validator)($value);
+        }
+        return true;
     }
 
     /**
