@@ -111,6 +111,7 @@ class DynamicSubCommand extends SubCommand {
     */
     public function addConstraint(Constraint $constraint): self {
         $this->config['constraints'][] = $constraint;
+        parent::addConstraint($constraint);
         return $this;
     }
 
@@ -122,6 +123,7 @@ class DynamicSubCommand extends SubCommand {
     */
     public function addArgument(Argument $argument): self {
         $this->config['arguments'][] = $argument;
+        parent::addArgument($argument);
         return $this;
     }
 

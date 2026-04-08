@@ -210,7 +210,7 @@ abstract class Command extends PMMPCommand {
       return;
     }
     // Handle subcommands
-    if (!empty($rawArgs)) {
+    if (!empty($rawArgs) && !empty($this->getSubCommands())) {
       $key = strtolower(array_shift($rawArgs));
       foreach ($this->getSubCommands() as $sub) {
         $name = $sub->getName();
@@ -220,6 +220,7 @@ abstract class Command extends PMMPCommand {
           return;
         }
       }
+      array_unshift($rawArgs, $key);
     }
       
     // Check constraints

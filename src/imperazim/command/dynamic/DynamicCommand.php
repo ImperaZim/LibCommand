@@ -126,6 +126,7 @@ class DynamicCommand extends Command {
     */
     public function addConstraint(Constraint $constraint): self {
         $this->config['constraints'][] = $constraint;
+        parent::addConstraint($constraint);
         return $this;
     }
 
@@ -137,6 +138,7 @@ class DynamicCommand extends Command {
     */
     public function addArgument(Argument $argument): self {
         $this->config['arguments'][] = $argument;
+        parent::addArgument($argument);
         return $this;
     }
 
@@ -148,6 +150,7 @@ class DynamicCommand extends Command {
     */
     public function addSubCommand(SubCommand $subCommand): self {
         $this->config['subcommands'][] = $subCommand;
+        parent::addSubCommand($subCommand);
         return $this;
     }
 
