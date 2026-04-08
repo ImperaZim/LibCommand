@@ -83,7 +83,7 @@ final class TargetArgument extends Argument {
    * @return bool True if valid identifier (1-16 word characters)
    */
   private function isValidEntityIdentifier(string $testString): bool {
-    return preg_match('/^\w{1,16}$/', $testString);
+    return (bool) preg_match('/^\w{1,16}$/', $testString);
   }
 
   /**
@@ -100,7 +100,7 @@ final class TargetArgument extends Argument {
     $args = [];
 
     // Extract arguments if present [arg=value]
-    if (strpos($selector, '[') !== false) {
+    if (str_contains($selector, '[')) {
       preg_match('/\[(.*?)\]/', $selector, $matches);
       if (isset($matches[1])) {
         parse_str(str_replace(',', '&', $matches[1]), $args);
@@ -257,7 +257,7 @@ final class TargetArgument extends Argument {
         if ($entity instanceof Player) continue;
 
         if (strtolower($entity->getNameTag()) === strtolower($identifier) ||
-          $entity->getId() === (int)$identifier) {
+          (is_numeric($identifier) && $entity->getId() === (int)$identifier)) {
           return $entity;
         }
       }
@@ -269,7 +269,7 @@ final class TargetArgument extends Argument {
         if ($entity instanceof Player) continue;
 
         if (strtolower($entity->getNameTag()) === strtolower($identifier) ||
-          $entity->getId() === (int)$identifier) {
+          (is_numeric($identifier) && $entity->getId() === (int)$identifier)) {
           return $entity;
         }
       }

@@ -10,7 +10,7 @@ use pocketmine\command\CommandSender;
 /**
 * Constraint that enforces permission requirements
 */
-class PermissionConstraint extends Constraint {
+final class PermissionConstraint extends Constraint {
     /**
     * @param string $permission Required permission node
     * @param string|null $customMessage Optional custom failure message

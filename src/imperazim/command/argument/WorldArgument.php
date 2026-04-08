@@ -59,7 +59,7 @@ final class WorldArgument extends Argument {
         $world = $this->getWorldManager()->getWorldByName($value);
 
         if ($world === null) {
-            $worlds = implode(', ', array_keys($this->getWorldManager()->getWorlds()));
+            $worlds = implode(', ', array_map(fn($w) => $w->getFolderName(), $this->getWorldManager()->getWorlds()));
             throw new ArgumentException("World '{$value}' not found. Available worlds: {$worlds}");
         }
 

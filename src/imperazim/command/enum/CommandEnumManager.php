@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace imperazim\command\enum;
 
 use pocketmine\Server;
@@ -14,7 +16,7 @@ use imperazim\command\exception\ArgumentException as CommandException;
 *
 * Handles registration, updating, and synchronization of enums across players
 */
-class CommandEnumManager {
+final class CommandEnumManager {
     
     /**
     * @var CommandSoftEnum[] Registered soft enums indexed by name

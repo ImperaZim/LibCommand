@@ -19,7 +19,7 @@ use imperazim\command\result\CommandFailure;
 *
 * Allows fluent configuration of command properties, arguments, subcommands, and callbacks
 */
-class DynamicCommand extends Command {
+final class DynamicCommand extends Command {
     
     /**
     * @var array Command configuration structure

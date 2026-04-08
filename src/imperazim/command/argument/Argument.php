@@ -97,29 +97,6 @@ abstract class Argument {
     }
 
     /**
-    * Checks if a name matches this argument (including aliases)
-    *
-    * @param string $name Name to check
-    * @return bool True if matches
-    */
-    public function matchesName(string $name): bool {
-        return $name === $this->name || in_array($name, $this->aliases, true);
-    }
-
-    /**
-    * Validates value using custom validator if provided
-    *
-    * @param mixed $value Value to validate
-    * @return bool True if valid
-    */
-    public function validate(mixed $value): bool {
-        if ($this->validator !== null) {
-            return ($this->validator)($value);
-        }
-        return true;
-    }
-
-    /**
     * Gets the network-ready parameter data
     *
     * @return CommandParameter Network command parameter data
@@ -172,4 +149,26 @@ abstract class Argument {
     * @throws ArgumentException If parsing fails
     */
     abstract public function parse(string $argument, CommandSender $sender): mixed;
+
+    /**
+    * Gets the custom validator, if any.
+    *
+    * @return callable|null
+    */
+    public function getValidator(): ?callable {
+        return $this->validator;
+    }
+
+    /**
+    * Runs the custom validator on a value, if set.
+    *
+    * @param mixed $value The value to validate
+    * @return bool True if valid or no validator set
+    */
+    public function runValidator(mixed $value): bool {
+        if ($this->validator !== null) {
+            return (bool) ($this->validator)($value);
+        }
+        return true;
+    }
 }

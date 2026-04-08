@@ -15,7 +15,7 @@ use imperazim\command\exception\ArgumentException;
 *
 * Represents an enumeration of predefined string values
 */
-class EnumArgument extends Argument {
+final class EnumArgument extends Argument {
 
     /** @var string[] Available choices */
     protected array $choices = [];
@@ -60,7 +60,7 @@ class EnumArgument extends Argument {
     * @return CommandParameter Network parameter data with enum
     */
     public function getParameterData(): CommandParameter {
-        return CommandParameter::enum($name, new CommandHardEnum("", $this->getChoices()), 0, $this->optional);
+        return CommandParameter::enum($this->getName(), new CommandHardEnum("", $this->getChoices()), 0, $this->isOptional());
     }
 
     /**
@@ -71,7 +71,7 @@ class EnumArgument extends Argument {
     * @return bool True if input matches an enum choice
     */
     public function canParse(string $testString, CommandSender $sender): bool {
-        return in_array($testString, $this->choices, true);
+        return in_array(strtolower($testString), array_map('strtolower', $this->choices), true);
     }
 
     /**
@@ -84,10 +84,12 @@ class EnumArgument extends Argument {
     * @throws ArgumentException If input is not a valid choice
     */
     public function parse(string $value, CommandSender $sender): mixed {
-        if (!in_array($value, $this->choices, true)) {
-            throw new ArgumentException("Invalid choice. Valid options: " . implode(", ", $this->choices));
+        foreach ($this->choices as $choice) {
+            if (strcasecmp($value, $choice) === 0) {
+                return $choice;
+            }
         }
-        return $value;
+        throw new ArgumentException("Invalid choice. Valid options: " . implode(", ", $this->choices));
     }
 
     /**

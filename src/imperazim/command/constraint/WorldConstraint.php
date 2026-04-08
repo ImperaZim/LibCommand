@@ -11,7 +11,7 @@ use pocketmine\command\CommandSender;
 /**
 * Constraint that restricts command usage to specific worlds
 */
-class WorldConstraint extends Constraint {
+final class WorldConstraint extends Constraint {
     /**
     * @var string[] Allowed world names
     */

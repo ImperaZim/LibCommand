@@ -16,10 +16,13 @@ use pocketmine\command\CommandSender;
 *
 * Example: maxUses=3, windowSeconds=60 => max 3 uses per minute
 */
-class RateLimiterConstraint extends Constraint {
+final class RateLimiterConstraint extends Constraint {
 
-    /** @var array<string, list<float>> Usage timestamps per sender */
+    /** @var array<string, list<float>> Usage timestamps per compound key (instanceId:senderKey) */
     private static array $usageLog = [];
+
+    /** @var string Unique identifier for this constraint instance */
+    private string $instanceId;
 
     /**
     * @param int $maxUses Maximum allowed executions within the window
@@ -32,7 +35,9 @@ class RateLimiterConstraint extends Constraint {
         private float $windowSeconds,
         private ?string $customMessage = null,
         private ?string $customDescription = null
-    ) {}
+    ) {
+        $this->instanceId = (string) spl_object_id($this);
+    }
 
     public function onSuccess(CommandSender $sender): void {
         $key = $this->getSenderKey($sender);
@@ -70,6 +75,12 @@ class RateLimiterConstraint extends Constraint {
             fn(float $ts) => $ts > $cutoff
         ));
 
+        // Remove sender key if empty
+        if (empty(self::$usageLog[$key])) {
+            unset(self::$usageLog[$key]);
+            return true;
+        }
+
         return count(self::$usageLog[$key]) < $this->maxUses;
     }
 
@@ -78,7 +89,8 @@ class RateLimiterConstraint extends Constraint {
     }
 
     private function getSenderKey(CommandSender $sender): string {
-        return $sender instanceof Player ? $sender->getUniqueId()->toString() : 'console';
+        $senderPart = $sender instanceof Player ? $sender->getUniqueId()->toString() : 'console';
+        return $this->instanceId . ':' . $senderPart;
     }
 
     private function getWindowRemaining(CommandSender $sender): float {

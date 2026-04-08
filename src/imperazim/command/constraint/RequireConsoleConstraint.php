@@ -11,7 +11,7 @@ use pocketmine\command\CommandSender;
 /**
 * Constraint that restricts command usage to console only
 */
-class RequireConsoleConstraint implements Constraint {
+final class RequireConsoleConstraint extends Constraint {
     /**
     * Notifies player about console-only restriction
     *
@@ -29,5 +29,14 @@ class RequireConsoleConstraint implements Constraint {
     */
     public function isSatisfiedBy(CommandSender $sender): bool {
         return (!$sender instanceof Player);
+    }
+
+    /**
+    * Gets a human-readable description of the constraint
+    *
+    * @return string Constraint description
+    */
+    public function getDescription(): string {
+        return 'Command can only be used from console';
     }
 }

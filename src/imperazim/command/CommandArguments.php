@@ -36,6 +36,15 @@ final class CommandArguments implements ArrayAccess, IteratorAggregate, Countabl
   }
 
   /**
+   * Gets the command sender.
+   *
+   * @return CommandSender
+   */
+  public function getSender(): CommandSender {
+    return $this->sender;
+  }
+
+  /**
    * Checks if an argument exists.
    *
    * @param mixed $offset Argument name

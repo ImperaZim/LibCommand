@@ -22,9 +22,9 @@ final class CommandResult {
     * @param string $label Actual command label used
     */
     public function __construct(
-        private CommandSender $sender,
-        private CommandArguments $arguments,
-        private string $label
+        private readonly CommandSender $sender,
+        private readonly CommandArguments $arguments,
+        private readonly string $label
     ) {}
 
     /**

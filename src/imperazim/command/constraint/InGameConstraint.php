@@ -11,7 +11,7 @@ use pocketmine\command\CommandSender;
 /**
 * Constraint that requires command sender to be an in-game player
 */
-class InGameConstraint extends Constraint {
+final class InGameConstraint extends Constraint {
     /**
     * @param string|null $customMessage Optional custom failure message
     * @param string|null $customDescription Optional custom description

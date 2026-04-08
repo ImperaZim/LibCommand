@@ -12,7 +12,7 @@ use pocketmine\command\CommandSender;
 /**
 * Constraint that requires sender to be in a specific game mode
 */
-class GameModeConstraint extends Constraint {
+final class GameModeConstraint extends Constraint {
     /**
     * @param GameMode $gameMode Required game mode
     * @param string|null $customMessage Optional custom failure message

@@ -49,11 +49,6 @@ final class BooleanArgument extends Argument {
 
     /**
     * Gets the human-readable type name
-        '0'
-    ];
-
-    /**
-    * Gets the human-readable type name
     *
     * @return string "bool"
     */
@@ -92,7 +87,7 @@ final class BooleanArgument extends Argument {
     */
     public function parse(string $value, CommandSender $sender): mixed {
         $normalized = strtolower($value);
-        if (!in_array($normalized, self::VALID_VALUES)) {
+        if (!in_array($normalized, self::VALID_VALUES, true)) {
             throw new ArgumentException("Invalid boolean value");
         }
         return in_array($normalized, ['true', 'yes', '1']);

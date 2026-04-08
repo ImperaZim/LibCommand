@@ -17,6 +17,9 @@ final class CommandHistory {
     /** @var int Maximum entries per sender */
     private static int $maxEntries = 50;
 
+    /** @var int Maximum tracked senders */
+    private static int $maxSenders = 200;
+
     /**
     * Sets the maximum number of history entries per sender.
     *
@@ -46,6 +49,11 @@ final class CommandHistory {
 
         if (count(self::$history[$senderName]) > self::$maxEntries) {
             array_shift(self::$history[$senderName]);
+        }
+
+        // Evict oldest sender if limit exceeded
+        if (count(self::$history) > self::$maxSenders) {
+            array_shift(self::$history);
         }
     }
 

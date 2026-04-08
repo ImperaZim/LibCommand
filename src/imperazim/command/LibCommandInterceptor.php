@@ -103,9 +103,9 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
         self::$processedPackets[spl_object_id($modifiedPacket)] = true;
 
         $session->sendDataPacket($modifiedPacket);
-        
-        // Clean up old packet ID from tracking
-        unset(self::$processedPackets[$packetId]);
+
+        // Clean up both packet IDs from tracking
+        unset(self::$processedPackets[$packetId], self::$processedPackets[spl_object_id($modifiedPacket)]);
         
         return false; // Cancel original packet
     }

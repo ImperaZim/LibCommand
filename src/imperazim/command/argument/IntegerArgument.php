@@ -65,7 +65,7 @@ final class IntegerArgument extends Argument {
     * @return bool True if valid integer within range
     */
     public function canParse(string $testString, CommandSender $sender): bool {
-        if (!is_numeric($testString) || !ctype_digit($testString)) {
+        if (!is_numeric($testString) || (string)(int)$testString !== $testString) {
             return false;
         }
 

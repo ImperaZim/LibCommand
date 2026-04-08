@@ -13,11 +13,14 @@ use pocketmine\command\CommandSender;
 *
 * Tracks last usage time per sender and prevents reuse until cooldown expires
 */
-class CooldownConstraint extends Constraint {
+final class CooldownConstraint extends Constraint {
     /**
-    * @var float[] Last usage timestamps indexed by sender key
+    * @var float[] Last usage timestamps indexed by compound key (instanceId:senderKey)
     */
     private static array $lastUsed = [];
+
+    /** @var string Unique identifier for this constraint instance */
+    private string $instanceId;
 
     /**
     * @param float $cooldownSeconds Cooldown duration in seconds
@@ -28,7 +31,9 @@ class CooldownConstraint extends Constraint {
         private float $cooldownSeconds,
         private ?string $customMessage = null,
         private ?string $customDescription = null
-    ) {}
+    ) {
+        $this->instanceId = (string) spl_object_id($this);
+    }
 
     /**
     * Records successful command execution time
@@ -63,6 +68,14 @@ class CooldownConstraint extends Constraint {
     public function isSatisfiedBy(CommandSender $sender): bool {
         $key = $this->getSenderKey($sender);
         $currentTime = microtime(true);
+
+        // Cleanup expired entries
+        foreach (self::$lastUsed as $k => $ts) {
+            if (($currentTime - $ts) >= $this->cooldownSeconds) {
+                unset(self::$lastUsed[$k]);
+            }
+        }
+
         if (!isset(self::$lastUsed[$key])) {
             return true;
         }
@@ -76,7 +89,8 @@ class CooldownConstraint extends Constraint {
     * @return string Unique identifier (UUID for players, 'console' otherwise)
     */
     private function getSenderKey(CommandSender $sender): string {
-        return $sender instanceof Player ? $sender->getUniqueId()->toString() : 'console';
+        $senderPart = $sender instanceof Player ? $sender->getUniqueId()->toString() : 'console';
+        return $this->instanceId . ':' . $senderPart;
     }
 
     /**

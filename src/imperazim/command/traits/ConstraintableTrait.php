@@ -56,13 +56,23 @@ trait ConstraintableTrait {
     */
     private function testConstraints(CommandSender $sender): array {
         $failed = [];
+        $passed = [];
 
         foreach ($this->constraints as $constraint) {
             if (!$constraint->isSatisfiedBy($sender)) {
-                $constraint->onFailure($sender);
                 $failed[] = $constraint;
             } else {
+                $passed[] = $constraint;
+            }
+        }
+
+        if (empty($failed)) {
+            foreach ($passed as $constraint) {
                 $constraint->onSuccess($sender);
+            }
+        } else {
+            foreach ($failed as $constraint) {
+                $constraint->onFailure($sender);
             }
         }
 

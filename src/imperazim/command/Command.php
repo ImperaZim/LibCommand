@@ -11,9 +11,8 @@ use pocketmine\permission\DefaultPermissions;
 use imperazim\command\traits\SubCommandTrait;
 use imperazim\command\traits\ArgumentableTrait;
 use imperazim\command\traits\ConstraintableTrait;
-use imperazim\command\argument\Argument;
-use imperazim\command\constraint\Constraint;
 use imperazim\command\constraint\PermissionConstraint;
+use imperazim\command\constraint\CooldownConstraint;
 use imperazim\command\result\CommandResult;
 use imperazim\command\result\CommandFailure;
 use imperazim\command\HelpGenerator;
@@ -34,12 +33,6 @@ abstract class Command extends PMMPCommand {
   /** @var array Custom messages for command failures */
   private array $messages = [];
 
-  /** @var float|null Command cooldown in seconds */
-  private ?float $cooldown = null;
-
-  /** @var array Last usage timestamps per sender */
-  private static array $cooldowns = [];
-
   /**
    * Constructor.
    *
@@ -57,9 +50,6 @@ abstract class Command extends PMMPCommand {
     // Store custom messages
     $this->messages = $config["messages"] ?? [];
 
-    // Store cooldown if provided
-    $this->cooldown = $config["cooldown"] ?? null;
-
     parent::__construct(
       $name,
       $description,
@@ -70,6 +60,9 @@ abstract class Command extends PMMPCommand {
     // Register constraints
     $constraints = $config["constraints"] ?? [];
     $constraints[] = new PermissionConstraint($permission);
+    if (isset($config["cooldown"]) && is_numeric($config["cooldown"])) {
+      $constraints[] = new CooldownConstraint((float) $config["cooldown"]);
+    }
     foreach ($constraints as $constraint) {
       $this->addConstraint($constraint);
     }
@@ -128,65 +121,6 @@ abstract class Command extends PMMPCommand {
   }
 
   /**
-   * Checks if sender is on cooldown.
-   *
-   * @param CommandSender $sender The sender to check
-   * @return bool True if on cooldown
-   */
-  private function isOnCooldown(CommandSender $sender): bool {
-    if ($this->cooldown === null) {
-      return false;
-    }
-
-    $name = $sender->getName();
-    $key = $this->getName() . ":" . $name;
-
-    if (!isset(self::$cooldowns[$key])) {
-      return false;
-    }
-
-    $elapsed = microtime(true) - self::$cooldowns[$key];
-    return $elapsed < $this->cooldown;
-  }
-
-  /**
-   * Gets remaining cooldown time.
-   *
-   * @param CommandSender $sender The sender to check
-   * @return float Remaining seconds
-   */
-  private function getRemainingCooldown(CommandSender $sender): float {
-    if ($this->cooldown === null) {
-      return 0.0;
-    }
-
-    $name = $sender->getName();
-    $key = $this->getName() . ":" . $name;
-
-    if (!isset(self::$cooldowns[$key])) {
-      return 0.0;
-    }
-
-    $elapsed = microtime(true) - self::$cooldowns[$key];
-    return max(0.0, $this->cooldown - $elapsed);
-  }
-
-  /**
-   * Updates sender's cooldown.
-   *
-   * @param CommandSender $sender The sender
-   */
-  private function updateCooldown(CommandSender $sender): void {
-    if ($this->cooldown === null) {
-      return;
-    }
-
-    $name = $sender->getName();
-    $key = $this->getName() . ":" . $name;
-    self::$cooldowns[$key] = microtime(true);
-  }
-
-  /**
    * Executes the command.
    *
    * @param CommandSender $sender The command sender
@@ -198,16 +132,6 @@ abstract class Command extends PMMPCommand {
     string $label,
     array $rawArgs
   ): void {
-    // Check cooldown
-    if ($this->isOnCooldown($sender)) {
-      $remaining = $this->getRemainingCooldown($sender);
-      $this->onFailure(
-        new CommandFailure($sender, CommandFailure::COOLDOWN, [
-          "remaining" => $remaining,
-        ])
-      );
-      return;
-    }
     // Handle subcommands
     if (!empty($rawArgs) && !empty($this->getSubCommands())) {
       $key = strtolower(array_shift($rawArgs));
@@ -225,11 +149,6 @@ abstract class Command extends PMMPCommand {
     // Check constraints
     $constraintResult = $this->testConstraints($sender);
     if (!$constraintResult["success"]) {
-      $this->onFailure(
-        new CommandFailure($sender, CommandFailure::CONSTRAINT_FAILED, [
-          "failed_constraints" => $constraintResult["failed_constraints"],
-        ])
-      );
       return;
     }
 
@@ -246,12 +165,9 @@ abstract class Command extends PMMPCommand {
       return;
     }
 
-    $parsedArgs = $this->parseArguments($sender, $rawArgs);
+    $parsedArgs = $this->parseArguments($sender, $processedArgs);
 
     try {
-      // Update cooldown before execution
-      $this->updateCooldown($sender);
-
       // Record in history
       CommandHistory::record($sender->getName(), $label, $rawArgs);
 
@@ -267,11 +183,11 @@ abstract class Command extends PMMPCommand {
             "trace" => $e->getTraceAsString(),
           ])
         );
-      } catch (\Throwable $e) {
-        $this->plugin->getLogger()->warning("Fatal error: " . $e->getMessage());
+      } catch (\Throwable $innerEx) {
+        $this->plugin->getLogger()->warning("Fatal error: " . $innerEx->getMessage());
         $this->plugin
           ->getLogger()
-          ->warning("Location: {$e->getFile()}:{$e->getLine()}");
+          ->warning("Location: {$innerEx->getFile()}:{$innerEx->getLine()}");
       }
     }
   }

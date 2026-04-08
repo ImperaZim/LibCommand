@@ -52,6 +52,9 @@ final class HelpGenerator {
     if (!empty($command->getArguments())) {
       $lines[] = "§eArguments:";
       foreach ($command->getArguments() as $arg) {
+        if (is_array($arg)) {
+          $arg = $arg[0];
+        }
         $name = $arg->getName();
         $type = $arg->getTypeName();
         $desc = $arg->getDescription();
@@ -158,13 +161,16 @@ final class HelpGenerator {
     }
 
     foreach ($command->getArguments() as $arg) {
+      if (is_array($arg)) {
+        $arg = $arg[0];
+      }
       $name = $arg->getName();
       $aliases = $arg->getAliases();
-      
+
       if (!empty($aliases)) {
         $name .= "|" . implode("|", $aliases);
       }
-      
+
       if ($arg->isOptional()) {
         $parts[] = "[" . $name . "]";
       } else {

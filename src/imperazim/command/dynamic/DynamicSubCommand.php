@@ -18,7 +18,7 @@ use imperazim\command\result\CommandFailure;
 *
 * Allows fluent configuration of subcommand properties, arguments, and callbacks
 */
-class DynamicSubCommand extends SubCommand {
+final class DynamicSubCommand extends SubCommand {
     
     /**
     * @var array Subcommand configuration structure
