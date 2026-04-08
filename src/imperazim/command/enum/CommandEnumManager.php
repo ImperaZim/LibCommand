@@ -7,6 +7,7 @@ use pocketmine\network\mcpe\NetworkBroadcastUtils;
 use pocketmine\network\mcpe\protocol\ClientboundPacket;
 use pocketmine\network\mcpe\protocol\UpdateSoftEnumPacket;
 use pocketmine\network\mcpe\protocol\types\command\CommandSoftEnum;
+use imperazim\command\exception\ArgumentException as CommandException;
 
 /**
 * Manages soft command enums for dynamic command suggestions

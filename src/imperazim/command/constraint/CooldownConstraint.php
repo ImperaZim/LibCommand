@@ -89,7 +89,7 @@ class CooldownConstraint extends Constraint {
         $key = $this->getSenderKey($sender);
         $lastTime = self::$lastUsed[$key] ?? 0;
         $elapsed = microtime(true) - $lastTime;
-        return max(0, number_format($this->cooldownSeconds - $elapsed, 1));
+        return round(max(0.0, $this->cooldownSeconds - $elapsed), 1);
     }
 
     /**

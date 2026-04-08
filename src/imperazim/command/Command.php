@@ -67,11 +67,10 @@ abstract class Command extends PMMPCommand {
       $aliases
     );
 
-    // Add permission constraint if none provided
-    $config["constraints"][] = new PermissionConstraint($permission);
-
     // Register constraints
-    foreach ($config["constraints"] ?? [] as $constraint) {
+    $constraints = $config["constraints"] ?? [];
+    $constraints[] = new PermissionConstraint($permission);
+    foreach ($constraints as $constraint) {
       $this->addConstraint($constraint);
     }
 
@@ -252,7 +251,10 @@ abstract class Command extends PMMPCommand {
     try {
       // Update cooldown before execution
       $this->updateCooldown($sender);
-      
+
+      // Record in history
+      CommandHistory::record($sender->getName(), $label, $rawArgs);
+
       // Execute command logic
       $this->onExecute(new CommandResult($sender, $parsedArgs, $label));
     } catch (\Throwable $e) {

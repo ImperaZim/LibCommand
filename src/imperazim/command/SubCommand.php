@@ -114,6 +114,7 @@ abstract class SubCommand {
                     return;
                 }
             }
+            array_unshift($rawArgs, $key);
         }
         // Check constraints
         $res = $this->testConstraints($sender);

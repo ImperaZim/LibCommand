@@ -7,6 +7,7 @@ namespace imperazim\command\traits;
 use imperazim\command\CommandArguments;
 use imperazim\command\argument\Argument;
 use imperazim\command\argument\StringArgument;
+use imperazim\command\argument\PositionArgument;
 use imperazim\command\result\CommandFailure;
 use pocketmine\command\CommandSender;
 
@@ -88,6 +89,15 @@ trait ArgumentableTrait {
             $argDef = $argDefs[$i];
             $remainingRaw = $rawCount - $j;
             $remainingArgs = $argCount - $i;
+
+            // PositionArgument consumes exactly 3 tokens (x y z)
+            if ($argDef instanceof PositionArgument && $remainingRaw >= 3) {
+                $value = implode(' ', array_slice($rawArgs, $j, 3));
+                $processed[] = $value;
+                $j += 3;
+                $i++;
+                continue;
+            }
 
             if ($argDef instanceof StringArgument && $remainingRaw > $remainingArgs) {
                 $toConsume = $remainingRaw - ($remainingArgs - 1);

@@ -55,14 +55,13 @@ class GameModeConstraint extends Constraint {
     * @return string Mode name (Survival, Creative, etc.)
     */
     private function getModeName(): string {
-        return match($this->gameMode->id()) {
-            GameMode::SURVIVAL()->id() => "Survival",
-            GameMode::CREATIVE()->id() => "Creative",
-            GameMode::ADVENTURE()->id() => "Adventure",
-            GameMode::SPECTATOR()->id() => "Spectator",
-            default => "Unknown"
-            };
-        }
+        return match($this->gameMode) {
+            GameMode::SURVIVAL => "Survival",
+            GameMode::CREATIVE => "Creative",
+            GameMode::ADVENTURE => "Adventure",
+            GameMode::SPECTATOR => "Spectator",
+        };
+    }
 
     /**
     * Gets description of this constraint
