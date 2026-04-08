@@ -63,9 +63,16 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
         self::$processedPackets[$packetId] = true;
 
         $server = Server::getInstance();
-        $disassembled = AvailableCommandsPacketDisassembler::disassemble($packet);
+        $logger = $server->getLogger();
+
+        try {
+            $disassembled = AvailableCommandsPacketDisassembler::disassemble($packet);
+        } catch (\Throwable $e) {
+            $logger->warning("[LibCommand] Failed to disassemble packet: " . $e->getMessage());
+            return true;
+        }
         $commandDataList = $disassembled->commandData;
-        
+
         foreach($commandDataList as $index => $commandData) {
             $cmd = $server->getCommandMap()->getCommand($commandData->getName());
             if (!($cmd instanceof Command)) {
@@ -81,13 +88,20 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
             }
 
             // Rebuild command UI
-            $commandData->overloads = $this->getOverloads($player, $cmd);
+            $overloads = $this->getOverloads($player, $cmd);
+            $logger->debug("[LibCommand] Command '{$commandData->getName()}' overloads: " . count($overloads) . ", args: " . count($cmd->getArguments()));
+            $commandData->overloads = $overloads;
         }
 
         // Send modified packet
-        $modifiedPacket = AvailableCommandsPacketAssembler::assemble($commandDataList, [], CommandEnumManager::getEnums());
+        try {
+            $modifiedPacket = AvailableCommandsPacketAssembler::assemble(array_values($commandDataList), [], CommandEnumManager::getEnums());
+        } catch (\Throwable $e) {
+            $logger->warning("[LibCommand] Failed to assemble packet: " . $e->getMessage());
+            return true;
+        }
         self::$processedPackets[spl_object_id($modifiedPacket)] = true;
-        
+
         $session->sendDataPacket($modifiedPacket);
         
         // Clean up old packet ID from tracking
