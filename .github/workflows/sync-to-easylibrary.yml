@@ -3,8 +3,6 @@ name: Sync to EasyLibrary
 on:
   push:
     branches: [development]
-    paths:
-      - 'src/imperazim/command/**'
 
 jobs:
   sync:
@@ -40,10 +38,10 @@ jobs:
           cd easylibrary
           git config user.name "ImperaZim"
           git config user.email "imperaartz1@gmail.com"
-          if git diff --quiet && git diff --cached --quiet; then
+          git add src/imperazim/command/
+          if git diff --cached --quiet; then
             echo "No changes to sync"
             exit 0
           fi
-          git add src/imperazim/command/
           git commit -m "[sync] Update embedded LibCommand from standalone"
           git push
