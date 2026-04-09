@@ -43,7 +43,7 @@ In your main plugin class:
 
 ```php
 public function onEnable(): void {
-    \imperazim\command\LibCommand::getInstance()->registerInterceptor($this);
+    LibCommand::getInstance()->registerInterceptor($this);
     $this->getServer()->getCommandMap()->register($this->getName(), new MyCommand($this));
 }
 ```

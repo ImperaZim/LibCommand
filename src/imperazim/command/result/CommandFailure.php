@@ -6,6 +6,7 @@ namespace imperazim\command\result;
 
 use pocketmine\command\CommandSender;
 use imperazim\command\constraint\Constraint;
+use InvalidArgumentException;
 
 /**
 * Represents a command execution failure with detailed error information
@@ -55,7 +56,7 @@ final class CommandFailure {
         private readonly array $data = []
     ) {
         if (!in_array($reasonId, self::ERROR_TYPES, true)) {
-            throw new \InvalidArgumentException("Invalid failure reason ID: $reasonId");
+            throw new InvalidArgumentException("Invalid failure reason ID: $reasonId");
         }
     }
 

@@ -12,6 +12,7 @@ use imperazim\command\traits\ArgumentableTrait;
 use imperazim\command\traits\ConstraintableTrait;
 use imperazim\command\constraint\PermissionConstraint;
 use pocketmine\plugin\Plugin;
+use Throwable;
 
 /**
 * Represents a subcommand within a main command.
@@ -144,7 +145,7 @@ abstract class SubCommand {
         try {
             // Execute subcommand logic
             $this->onExecute(new CommandResult($sender, $parsed, $label));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->onFailure(new CommandFailure(
                 $sender,
                 CommandFailure::EXECUTION_ERROR,

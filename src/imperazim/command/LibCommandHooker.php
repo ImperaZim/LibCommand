@@ -7,6 +7,7 @@ namespace imperazim\command;
 use imperazim\packet\LibPacket;
 use pocketmine\event\EventPriority;
 use pocketmine\plugin\PluginBase;
+use Exception;
 
 /**
 * Load and start libcommand hooks
@@ -25,7 +26,7 @@ final class LibCommandHooker {
     */
     public static function registerInterceptor(PluginBase $plugin): void {
         if (self::$registered) {
-            throw new \Exception("Command interceptor already registered.");
+            throw new Exception("Command interceptor already registered.");
         }
 
         $priority = EventPriority::HIGHEST;

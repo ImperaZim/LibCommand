@@ -15,6 +15,7 @@ use pocketmine\network\mcpe\protocol\types\command\CommandOverload;
 use pocketmine\network\mcpe\protocol\types\command\CommandParameter;
 use imperazim\packet\handler\PacketHandlerInterface;
 use imperazim\command\enum\CommandEnumManager;
+use Throwable;
 
 /**
 * Intercepts AvailableCommandsPacket to dynamically modify command UI.
@@ -67,7 +68,7 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
 
         try {
             $disassembled = AvailableCommandsPacketDisassembler::disassemble($packet);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $logger->warning("[LibCommand] Failed to disassemble packet: " . $e->getMessage());
             return true;
         }
@@ -96,7 +97,7 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
         // Send modified packet
         try {
             $modifiedPacket = AvailableCommandsPacketAssembler::assemble(array_values($commandDataList), [], CommandEnumManager::getEnums());
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $logger->warning("[LibCommand] Failed to assemble packet: " . $e->getMessage());
             return true;
         }

@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace imperazim\command\exception;
 
+use RuntimeException;
+
 /**
 * Exception thrown for argument-related errors in command processing
 *
@@ -14,4 +16,4 @@ namespace imperazim\command\exception;
 *
 * @package imperazim\command\exception
 */
-class ArgumentException extends \RuntimeException {}
+class ArgumentException extends RuntimeException {}

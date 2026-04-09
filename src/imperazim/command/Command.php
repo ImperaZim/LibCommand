@@ -16,6 +16,7 @@ use imperazim\command\constraint\CooldownConstraint;
 use imperazim\command\result\CommandResult;
 use imperazim\command\result\CommandFailure;
 use imperazim\command\HelpGenerator;
+use Throwable;
 
 /**
  * Abstract base class for custom commands.
@@ -173,7 +174,7 @@ abstract class Command extends PMMPCommand {
 
       // Execute command logic
       $this->onExecute(new CommandResult($sender, $parsedArgs, $label));
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
       try {
         $this->onFailure(
           new CommandFailure($sender, CommandFailure::EXECUTION_ERROR, [
@@ -183,7 +184,7 @@ abstract class Command extends PMMPCommand {
             "trace" => $e->getTraceAsString(),
           ])
         );
-      } catch (\Throwable $innerEx) {
+      } catch (Throwable $innerEx) {
         $this->plugin->getLogger()->warning("Fatal error: " . $innerEx->getMessage());
         $this->plugin
           ->getLogger()

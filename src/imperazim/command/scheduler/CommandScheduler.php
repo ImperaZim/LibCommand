@@ -8,6 +8,8 @@ use pocketmine\Server;
 use pocketmine\command\CommandSender;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\TaskScheduler;
+use RuntimeException;
 
 /**
 * Schedule command execution in the future.
@@ -137,9 +139,9 @@ final class CommandScheduler {
         return array_keys(self::$tasks);
     }
 
-    private static function getScheduler(): \pocketmine\scheduler\TaskScheduler {
+    private static function getScheduler(): TaskScheduler {
         if (self::$plugin === null) {
-            throw new \RuntimeException("CommandScheduler not initialized. Call CommandScheduler::init(\$plugin) first.");
+            throw new RuntimeException("CommandScheduler not initialized. Call CommandScheduler::init(\$plugin) first.");
         }
         return self::$plugin->getScheduler();
     }
