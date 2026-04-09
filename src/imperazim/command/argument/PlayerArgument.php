@@ -83,4 +83,22 @@ final class PlayerArgument extends Argument {
 
         return $player;
     }
+
+    /**
+    * Returns online player names matching the partial input.
+    *
+    * @param string $partial Partial name typed so far
+    * @param CommandSender $sender Command executor
+    * @return string[] Matching player names
+    */
+    public function getSuggestions(string $partial, CommandSender $sender): array {
+        $partial = strtolower($partial);
+        $suggestions = [];
+        foreach (Server::getInstance()->getOnlinePlayers() as $player) {
+            if ($partial === '' || str_starts_with(strtolower($player->getName()), $partial)) {
+                $suggestions[] = $player->getName();
+            }
+        }
+        return $suggestions;
+    }
 }

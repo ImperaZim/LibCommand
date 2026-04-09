@@ -92,4 +92,19 @@ final class BooleanArgument extends Argument {
         }
         return in_array($normalized, ['true', 'yes', '1']);
     }
+
+    /**
+    * Returns boolean value suggestions matching the partial input.
+    *
+    * @param string $partial Partial input typed so far
+    * @param CommandSender $sender Command executor
+    * @return string[] Matching boolean values
+    */
+    public function getSuggestions(string $partial, CommandSender $sender): array {
+        $partial = strtolower($partial);
+        return array_values(array_filter(
+            self::VALID_VALUES,
+            fn(string $v) => $partial === '' || str_starts_with($v, $partial)
+        ));
+    }
 }

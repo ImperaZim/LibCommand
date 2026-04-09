@@ -171,4 +171,18 @@ abstract class Argument {
         }
         return true;
     }
+
+    /**
+    * Returns tab-completion suggestions for a partial input.
+    *
+    * Override in subclasses for type-specific suggestions.
+    * Used by Command to provide server-side tab completion.
+    *
+    * @param string $partial Partial input typed so far
+    * @param CommandSender $sender Command executor
+    * @return string[] Suggested completions
+    */
+    public function getSuggestions(string $partial, CommandSender $sender): array {
+        return [];
+    }
 }

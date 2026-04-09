@@ -100,4 +100,19 @@ final class EnumArgument extends Argument {
     public function getChoices(): array {
         return $this->choices;
     }
+
+    /**
+    * Returns enum choices matching the partial input.
+    *
+    * @param string $partial Partial input typed so far
+    * @param CommandSender $sender Command executor
+    * @return string[] Matching choices
+    */
+    public function getSuggestions(string $partial, CommandSender $sender): array {
+        $partial = strtolower($partial);
+        return array_values(array_filter(
+            $this->choices,
+            fn(string $c) => $partial === '' || str_starts_with(strtolower($c), $partial)
+        ));
+    }
 }
