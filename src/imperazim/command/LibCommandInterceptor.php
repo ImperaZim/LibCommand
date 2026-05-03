@@ -50,7 +50,7 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
 
         $server = Server::getInstance();
         foreach ($packet->commandData as $name => $data) {
-            $cmd = $server->getCommandMap()->getCommand($name);
+            $cmd = $server->getCommandMap()->getCommand((string)$name);
 
             // Skip non-custom commands
             if (!($cmd instanceof Command)) {
