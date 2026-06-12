@@ -32,7 +32,7 @@ final class DynamicSubCommand extends SubCommand {
     * - 'arguments': Argument[] Subcommand arguments
     * - 'subcommands': SubCommand[] Child subcommands
     */
-    private array $config = [
+    protected array $config = [
         'name' => '',
         'description' => '',
         'aliases' => [],

@@ -96,10 +96,9 @@ final class DynamicCommand extends Command {
     }
 
     /**
-    * Sets required permission
+    * Sets required permission. Keeps PocketMine's void return signature.
     *
-    * @param string $permission Permission node
-    * @return $this
+    * @param string|null $permission Permission node
     */
     public function setPermission(?string $permission): void {
         $this->config['permission'] = $permission ?? DefaultPermissions::ROOT_USER;
