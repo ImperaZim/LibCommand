@@ -21,10 +21,12 @@ final class CommandResult {
     * @param CommandArguments $arguments Parsed command arguments
     * @param string $label Actual command label used
     */
+    /** @param list<string> $rawArguments */
     public function __construct(
         private readonly CommandSender $sender,
         private readonly CommandArguments $arguments,
-        private readonly string $label
+        private readonly string $label,
+        private readonly array $rawArguments = []
     ) {}
 
     /**
@@ -52,5 +54,10 @@ final class CommandResult {
     */
     public function getLabel(): string {
         return $this->label;
+    }
+
+    /** @return list<string> Raw arguments exactly as received from PMMP */
+    public function getRawArguments(): array {
+        return $this->rawArguments;
     }
 }

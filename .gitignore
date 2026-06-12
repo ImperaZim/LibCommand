@@ -24,3 +24,21 @@
 .DS_Store
 Thumbs.db/vendor/
 .env
+# Composer / PHP
+composer.lock
+.phpunit.cache/
+.phpstan.cache/
+coverage/
+
+# Build artifacts
+/dist/
+/releases/
+/tmp/
+*.zip
+
+# IDE / OS
+Thumbs.db
+
+# Logs / temp
+*.bak
+*.swp

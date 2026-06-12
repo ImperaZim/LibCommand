@@ -1,0 +1,39 @@
+
+name: Quality
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate JSON files
+        run: php .github/scripts/validate-json.php
+
+      - name: Validate composer.json
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer validate --strict
+
+      - name: Install Composer dependencies
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run Composer quality script
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer run quality

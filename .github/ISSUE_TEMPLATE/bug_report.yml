@@ -1,0 +1,68 @@
+
+name: Bug report
+description: Report a reproducible bug or crash.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough details so the issue can be reproduced.
+  - type: input
+    id: library-version
+    attributes:
+      label: Library / plugin version
+      description: Example: 2.0.0, 1.1.0, latest development branch.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: pmmp-version
+    attributes:
+      label: PocketMine-MP version
+      placeholder: "5.x.x"
+    validations:
+      required: false
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP version
+      placeholder: "8.2.x"
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest set of steps that trigger the issue.
+      placeholder: |
+        1. Install ...
+        2. Run ...
+        3. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error, crashdump or relevant logs
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra context
+    validations:
+      required: false

@@ -1,0 +1,27 @@
+
+name: Question
+description: Ask a usage or integration question.
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Explain what you are trying to do and what you already tried.
+    validations:
+      required: true
+  - type: input
+    id: library-version
+    attributes:
+      label: Library / plugin version
+      placeholder: "2.0.0"
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / code
+      render: php
+    validations:
+      required: false

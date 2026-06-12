@@ -173,7 +173,7 @@ abstract class Command extends PMMPCommand {
       CommandHistory::record($sender->getName(), $label, $rawArgs);
 
       // Execute command logic
-      $this->onExecute(new CommandResult($sender, $parsedArgs, $label));
+      $this->onExecute(new CommandResult($sender, $parsedArgs, $label, array_values($rawArgs)));
     } catch (Throwable $e) {
       try {
         $this->onFailure(

@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="icon.png" alt="LibCommand" width="256" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue?style=flat-square" alt="Version 2.0.0" />
+  <img src="https://img.shields.io/badge/PocketMine--MP-5.0.0+-blue?style=flat-square" alt="PocketMine-MP 5.0.0+" />
+  <img src="https://img.shields.io/badge/PHP-8.2+-777bb4?style=flat-square" alt="PHP 8.2+" />
+  <img src="https://img.shields.io/github/license/ImperaZim/LibCommand?style=flat-square" alt="License" />
+</p>
+
 # LibCommand
 
 ## Description
