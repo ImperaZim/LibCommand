@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - name: Checkout LibCommand
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: standalone
 
       - name: Checkout EasyLibrary
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ImperaZim/EasyLibrary
           ref: development
