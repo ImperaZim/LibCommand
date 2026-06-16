@@ -170,14 +170,16 @@ final class LibCommandInterceptor implements PacketHandlerInterface {
                 $param = clone $argument->getParameterData();
 
                 // Handle enums
-                if(isset($param->enum) && $param->enum instanceof CommandHardEnum){
-					//TODO: This hack is not needed on PM's account as of 5.36.0, but since enums are initialised
-					//with an empty name in StringEnumArgument (and I don't know why), it's best to preserve the
-					//original behaviour
-					$param->enum = new CommandHardEnum(
-						"enum#" . spl_object_id($param->enum),
-						$param->enum->getValues()
-					);
+                if (
+                    $param->enum instanceof CommandHardEnum &&
+                    $param->enum->getName() === ''
+                ) {
+                    $values = $param->enum->getValues();
+                    $param->enum = new CommandHardEnum(
+                        'enum:' . $param->paramName . ':' .
+                        substr(hash('sha256', serialize($values)), 0, 16),
+                        $values
+                    );
                 }
                 $params[] = $param;
             }

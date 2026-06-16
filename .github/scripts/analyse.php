@@ -18,9 +18,6 @@ foreach ($configs as $candidate) {
 }
 
 $phpstan = $root . '/vendor/bin/phpstan';
-if (PHP_OS_FAMILY === 'Windows') {
-    $phpstan .= '.bat';
-}
 
 if (!is_file($phpstan)) {
     echo "PHPStan is not installed; skipping analysis.\n";

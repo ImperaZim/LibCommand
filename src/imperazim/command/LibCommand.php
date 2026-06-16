@@ -20,4 +20,7 @@ final class LibCommand extends PluginBase {
         LibCommandHooker::registerInterceptor($this);
     }
 
+    protected function onDisable(): void {
+        LibCommandHooker::shutdown($this);
+    }
 }

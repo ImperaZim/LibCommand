@@ -3,6 +3,8 @@ name: Sync to EasyLibrary
 on:
   push:
     branches: [development]
+    paths:
+      - 'src/imperazim/command/**'
 
 jobs:
   sync:
@@ -44,4 +46,14 @@ jobs:
             exit 0
           fi
           git commit -m "[sync] Update embedded LibCommand from standalone"
-          git push
+          for attempt in 1 2 3 4 5; do
+            if git push origin development; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            git fetch origin development
+            git rebase origin/development
+            sleep $((attempt * 2))
+          done

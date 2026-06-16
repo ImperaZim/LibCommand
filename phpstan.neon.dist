@@ -5,4 +5,3 @@ parameters:
     bootstrapFiles:
         - tests/phpstan-pmmp-stubs.php
     treatPhpDocTypesAsCertain: false
-    checkMissingIterableValueType: false

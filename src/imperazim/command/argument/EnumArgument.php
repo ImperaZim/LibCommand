@@ -60,7 +60,15 @@ final class EnumArgument extends Argument {
     * @return CommandParameter Network parameter data with enum
     */
     public function getParameterData(): CommandParameter {
-        return CommandParameter::enum($this->getName(), new CommandHardEnum("", $this->getChoices()), 0, $this->isOptional());
+        $choices = $this->getChoices();
+        $enumName = 'enum:' . $this->getName() . ':' .
+            substr(hash('sha256', serialize($choices)), 0, 16);
+        return CommandParameter::enum(
+            $this->getName(),
+            new CommandHardEnum($enumName, $choices),
+            0,
+            $this->isOptional()
+        );
     }
 
     /**
