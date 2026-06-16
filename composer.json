@@ -12,7 +12,7 @@
         "php": "^8.2"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.10"
+        "phpstan/phpstan": "^1.10 || ^2.0"
     },
     "scripts": {
         "lint": "@php .github/scripts/lint.php",
