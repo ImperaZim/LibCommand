@@ -1,0 +1,93 @@
+name: Release Assets
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-assets-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish PHAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: curl, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate composer.json
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer validate --strict
+
+      - name: Install Composer dependencies
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run quality checks
+        if: ${{ hashFiles('composer.json') != '' }}
+        run: composer run quality
+
+      - name: Build PHAR
+        run: php -d phar.readonly=0 .github/scripts/build-phar.php
+
+      - name: Read release metadata
+        id: metadata
+        shell: bash
+        run: |
+          source dist/release.env
+          if [[ "${{ github.event_name }}" == "push" && "${GITHUB_REF_NAME}" != "${TAG}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match plugin version ${TAG}" >&2
+            exit 1
+          fi
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "phar=${PHAR}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="${{ steps.metadata.outputs.tag }}"
+          TITLE="${{ steps.metadata.outputs.name }} ${{ steps.metadata.outputs.version }}"
+          PHAR="${{ steps.metadata.outputs.phar }}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$PHAR" dist/checksums.txt --clobber
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            gh release create "$TAG" "$PHAR" dist/checksums.txt \
+              --verify-tag \
+              --title "$TITLE" \
+              --generate-notes
+          else
+            gh release create "$TAG" "$PHAR" dist/checksums.txt \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --generate-notes
+          fi
+
+      - name: Verify published PHAR
+        shell: bash
+        run: |
+          TAG="${{ steps.metadata.outputs.tag }}"
+          PHAR="${{ steps.metadata.outputs.phar }}"
+          ASSET="$(basename "$PHAR")"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}"
+          curl --fail --location --retry 10 --retry-delay 3 --retry-all-errors --output dist/published.phar "$URL"
+          test "$(sha256sum dist/published.phar | cut -d' ' -f1)" = "$(sha256sum "$PHAR" | cut -d' ' -f1)"
