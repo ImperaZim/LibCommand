@@ -2,6 +2,22 @@
 
 All notable changes to `LibCommand` should be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Added `package.yml` for the EasyLibrary internal package format.
+- Added `.github/scripts/build-easylib-package.php` to build
+  `LibCommand-<version>.easylib.zip`.
+- Updated the release workflow to publish the standalone PHAR, the internal
+  EasyLibrary package zip, `package.yml` and a shared `checksums.txt`.
+
+### Notes
+
+- The standalone PHAR remains unchanged.
+- The internal package declares `libpacket` as a required package because
+  LibCommand still uses LibPacket for dynamic command UI integration.
+
 ## [2.0.0] - 2026-06-16
 
 **For PocketMine-MP API 5.0.0+ and PHP 8.2+**

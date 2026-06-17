@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish PHAR
+    name: Build and publish PHAR/package
     runs-on: ubuntu-latest
 
     steps:
@@ -45,6 +45,9 @@ jobs:
       - name: Build PHAR
         run: php -d phar.readonly=0 .github/scripts/build-phar.php
 
+      - name: Build EasyLibrary package
+        run: php .github/scripts/build-easylib-package.php
+
       - name: Read release metadata
         id: metadata
         shell: bash
@@ -58,6 +61,8 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "phar=${PHAR}" >> "$GITHUB_OUTPUT"
+          echo "easylib=${EASYLIB}" >> "$GITHUB_OUTPUT"
+          echo "package_manifest=${PACKAGE_MANIFEST}" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release assets
         env:
@@ -67,22 +72,24 @@ jobs:
           TAG="${{ steps.metadata.outputs.tag }}"
           TITLE="${{ steps.metadata.outputs.name }} ${{ steps.metadata.outputs.version }}"
           PHAR="${{ steps.metadata.outputs.phar }}"
+          EASYLIB="${{ steps.metadata.outputs.easylib }}"
+          PACKAGE_MANIFEST="${{ steps.metadata.outputs.package_manifest }}"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$PHAR" dist/checksums.txt --clobber
+            gh release upload "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt --clobber
           elif [[ "${{ github.event_name }}" == "push" ]]; then
-            gh release create "$TAG" "$PHAR" dist/checksums.txt \
+            gh release create "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt \
               --verify-tag \
               --title "$TITLE" \
               --generate-notes
           else
-            gh release create "$TAG" "$PHAR" dist/checksums.txt \
+            gh release create "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt \
               --target "$GITHUB_SHA" \
               --title "$TITLE" \
               --generate-notes
           fi
 
-      - name: Verify published PHAR
+      - name: Verify published PHAR and package
         shell: bash
         run: |
           TAG="${{ steps.metadata.outputs.tag }}"
@@ -91,3 +98,9 @@ jobs:
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}"
           curl --fail --location --retry 10 --retry-delay 3 --retry-all-errors --output dist/published.phar "$URL"
           test "$(sha256sum dist/published.phar | cut -d' ' -f1)" = "$(sha256sum "$PHAR" | cut -d' ' -f1)"
+
+          EASYLIB="${{ steps.metadata.outputs.easylib }}"
+          EASYLIB_ASSET="$(basename "$EASYLIB")"
+          EASYLIB_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${EASYLIB_ASSET}"
+          curl --fail --location --retry 10 --retry-delay 3 --retry-all-errors --output dist/published.easylib.zip "$EASYLIB_URL"
+          test "$(sha256sum dist/published.easylib.zip | cut -d' ' -f1)" = "$(sha256sum "$EASYLIB" | cut -d' ' -f1)"

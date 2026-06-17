@@ -1,0 +1,30 @@
+id: libcommand
+name: LibCommand
+version: 2.0.0
+type: runtime
+api: 1
+namespace: imperazim\command
+entry: imperazim\command\LibCommandPackage
+
+dependencies:
+  required:
+    - libpacket
+  optional: []
+
+provides:
+  - command
+
+autoload:
+  psr-4:
+    imperazim\command\: src/imperazim/command
+
+resources: []
+
+permissions: []
+
+lifecycle:
+  boot: true
+  enable: true
+  disable: true
+  reload: true
+  stateful: false

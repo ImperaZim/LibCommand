@@ -816,3 +816,24 @@ throw new ArgumentException("Value must be a positive number");
 ## Licensing information
 
 This project is licensed under MIT. Please see the [LICENSE](/LICENSE) file for details.
+
+## EasyLibrary internal package asset
+
+LibCommand remains available as a standalone PHAR. Starting with the EasyLibrary
+3.x migration, the release workflow can also publish an internal package asset:
+
+```txt
+LibCommand-2.0.0.easylib.zip
+package.yml
+checksums.txt
+```
+
+The `.easylib.zip` package is intended for EasyLibrary's internal package
+manager and is installed under:
+
+```txt
+plugin_data/EasyLibrary/packages/libcommand/<version>/
+```
+
+The standalone PHAR remains the correct option for servers that want LibCommand
+without EasyLibrary.
