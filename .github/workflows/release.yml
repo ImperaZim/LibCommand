@@ -63,6 +63,11 @@ jobs:
           echo "phar=${PHAR}" >> "$GITHUB_OUTPUT"
           echo "easylib=${EASYLIB}" >> "$GITHUB_OUTPUT"
           echo "package_manifest=${PACKAGE_MANIFEST}" >> "$GITHUB_OUTPUT"
+          if [[ "${TAG}" == *"-dev"* ]]; then
+            echo "prerelease_args=--prerelease" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease_args=" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Publish GitHub Release assets
         env:
@@ -74,18 +79,24 @@ jobs:
           PHAR="${{ steps.metadata.outputs.phar }}"
           EASYLIB="${{ steps.metadata.outputs.easylib }}"
           PACKAGE_MANIFEST="${{ steps.metadata.outputs.package_manifest }}"
+          PRERELEASE_ARGS="${{ steps.metadata.outputs.prerelease_args }}"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt --clobber
+            if [[ -n "$PRERELEASE_ARGS" ]]; then
+              gh release edit "$TAG" $PRERELEASE_ARGS
+            fi
           elif [[ "${{ github.event_name }}" == "push" ]]; then
             gh release create "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt \
               --verify-tag \
               --title "$TITLE" \
+              $PRERELEASE_ARGS \
               --generate-notes
           else
             gh release create "$TAG" "$PHAR" "$EASYLIB" "$PACKAGE_MANIFEST" dist/checksums.txt \
               --target "$GITHUB_SHA" \
               --title "$TITLE" \
+              $PRERELEASE_ARGS \
               --generate-notes
           fi
 
