@@ -32,7 +32,7 @@ jobs:
 
       - name: Install Composer dependencies
         if: ${{ hashFiles('composer.json') != '' }}
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer install --prefer-dist --no-interaction --no-progress --ignore-platform-req='ext-*'
 
       - name: Run Composer quality script
         if: ${{ hashFiles('composer.json') != '' }}

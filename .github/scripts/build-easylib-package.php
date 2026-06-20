@@ -47,6 +47,7 @@ if (is_file($zipPath) && !unlink($zipPath)) {
 
 $zip = new PharData($zipPath);
 foreach ([
+    'plugin.yml',
     'package.yml',
     'src',
     'resources',
