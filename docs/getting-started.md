@@ -23,4 +23,4 @@ composer run quality
 imperazim/libcommand
 ```
 
-Read `docs/compatibility.md` before mixing standalone libraries with EasyLibrary embedded copies.
+Read `docs/standalone-vs-embedded.md` before mixing standalone plugins with EasyLibrary package-backed providers.

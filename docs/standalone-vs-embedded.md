@@ -1,20 +1,33 @@
+# Standalone vs Package-Backed
 
-# Standalone vs Embedded
+`LibCommand` can be used as an independent PocketMine-MP plugin/library or as an official EasyLibrary package-backed provider.
 
-`LibCommand` can be used as an independent PocketMine-MP library and may also be available through EasyLibrary's embedded distribution.
+EasyLibrary 3.x no longer embeds official library source. The supported provider choices are now:
+
+| Provider | Where it lives | Who owns runtime |
+|---|---|---|
+| Standalone | `plugins/LibCommand.phar` or `plugins/LibCommand/` | PocketMine-MP plugin manager |
+| Package-backed | `plugin_data/EasyLibrary/packages/libcommand/<version>/` plus a generated EasyLibrary proxy | EasyLibrary package manager |
 
 ## Use the standalone library when
 
-- you want this library to own its runtime commands, tasks, listeners or managers;
-- you want to update this library independently from EasyLibrary;
-- another plugin explicitly depends on the standalone PHAR.
+- another plugin has a hard `depend` on `LibCommand` and you want to manage it manually;
+- you want this library to be updated, removed or replaced independently from EasyLibrary;
+- the server does not use the EasyLibrary package manager flow.
 
-## Use the EasyLibrary embedded copy when
+## Use the EasyLibrary package when
 
-- your plugin only needs the public API namespace;
-- you want fewer separate PHARs on the server;
-- fallback runtime behavior is enough for the target use case.
+- you want EasyLibrary to install and track official packages under `plugin_data/EasyLibrary/packages/`;
+- you want restart-safe package install, update, remove, rollback and repair operations;
+- you want `/easylibrary packages doctor` and proxy diagnostics for official libs.
 
 ## Important
 
-Do not register the same runtime feature twice. If the standalone library is installed, treat it as the primary runtime and let EasyLibrary act as fallback/compatibility where supported.
+Do not intentionally run two active providers for the same runtime. During migration, if the standalone plugin is present, it wins and the internal EasyLibrary package should report as shadowed.
+
+Validate provider ownership with:
+
+```txt
+/easylibrary packages doctor
+elprobe run libcommand
+```

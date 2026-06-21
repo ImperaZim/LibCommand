@@ -12,4 +12,4 @@ Use this file to document migration steps between versions of `LibCommand`.
 
 ## EasyLibrary compatibility
 
-When a standalone library is also embedded into EasyLibrary, keep public API changes synchronized between both distributions.
+EasyLibrary 3.x does not embed official library source. Keep the standalone repository and EasyLibrary package metadata/release assets synchronized; do not copy source back into EasyLibrary.
