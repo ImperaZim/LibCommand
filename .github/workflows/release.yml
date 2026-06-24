@@ -115,3 +115,12 @@ jobs:
           EASYLIB_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${EASYLIB_ASSET}"
           curl --fail --location --retry 10 --retry-delay 3 --retry-all-errors --output dist/published.easylib.zip "$EASYLIB_URL"
           test "$(sha256sum dist/published.easylib.zip | cut -d' ' -f1)" = "$(sha256sum "$EASYLIB" | cut -d' ' -f1)"
+      - name: Send Discord release notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
+          NOTIFICATION_KIND: release
+          RELEASE_NAME: ${{ steps.metadata.outputs.name }}
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          RELEASE_ASSETS: ${{ steps.metadata.outputs.phar }},${{ steps.metadata.outputs.easylib }},${{ steps.metadata.outputs.package_manifest }},dist/checksums.txt
+        run: python3 .github/scripts/notify-discord.py release

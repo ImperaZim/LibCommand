@@ -1,0 +1,30 @@
+name: Repository Notifications
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-notifications-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  push:
+    name: Notify push channel
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send Discord push notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_PUSH_WEBHOOK_URL }}
+          NOTIFICATION_KIND: push
+        run: python3 .github/scripts/notify-discord.py push
