@@ -51,57 +51,90 @@ def build_push_payload() -> dict[str, object]:
     repository = os.getenv("GITHUB_REPOSITORY", event.get("repository", {}).get("full_name", "unknown/repo"))
     branch = os.getenv("GITHUB_REF_NAME", event.get("ref", "").replace("refs/heads/", ""))
     actor = os.getenv("GITHUB_ACTOR", event.get("pusher", {}).get("name", "unknown"))
-    compare_url = event.get("compare") or repository_url(repository)
+    repo_url = repository_url(repository)
+    compare_url = event.get("compare") or repo_url
     commits = event.get("commits", [])
+    commits = commits if isinstance(commits, list) else []
     head = event.get("head_commit") or {}
     head_message = first_line(str(head.get("message", "No commit message.")), 180)
     head_sha = str(head.get("id", os.getenv("GITHUB_SHA", "")))[:7]
+    repo_name = repository.rsplit("/", 1)[-1]
+    owner = repository.split("/", 1)[0] if "/" in repository else actor
+    count = len(commits)
+    commit_word = "commit" if count == 1 else "commits"
+    title = f"[{repo_name}:{branch or 'unknown'}] {count} new {commit_word}"
+    if count == 0:
+        title = f"[{repo_name}:{branch or 'unknown'}] new push"
+
+    lines = [
+        f"Repository: [{repository}]({repo_url}) | Branch: [{branch or 'unknown'}]({branch_url(repository, branch)})",
+        "",
+    ]
+    commit_lines = format_commit_lines(commits, repo_url, actor)
+    if commit_lines:
+        lines.extend(commit_lines)
+    else:
+        lines.append(f"[`{head_sha}`]({commit_url(repo_url, str(head.get('id', os.getenv('GITHUB_SHA', ''))))}) {head_message} - {actor}")
+
+    embed = {
+        "author": {
+            "name": owner,
+            "url": f"https://github.com/{owner}",
+            "icon_url": github_avatar_url(owner),
+        },
+        "title": title,
+        "url": compare_url,
+        "description": "\n".join(lines),
+        "color": 0x2F81F7,
+        "footer": {"text": f"pushed by {actor}"},
+    }
+    timestamp = str(head.get("timestamp", "")).strip()
+    if timestamp != "":
+        embed["timestamp"] = timestamp
 
     return {
-        "username": "ImperaZim Repository",
-        "embeds": [
-            {
-                "title": f"Push: {repository}",
-                "url": compare_url,
-                "description": head_message,
-                "color": 0x3BA55D,
-                "fields": [
-                    {"name": "Branch", "value": branch or "unknown", "inline": True},
-                    {"name": "Actor", "value": actor, "inline": True},
-                    {"name": "Commits", "value": str(len(commits)), "inline": True},
-                    {"name": "Head", "value": f"`{head_sha}`", "inline": True},
-                ],
-            }
-        ],
+        "username": owner,
+        "avatar_url": github_avatar_url(owner),
+        "embeds": [embed],
     }
 
 
 def build_release_payload() -> dict[str, object]:
     repository = os.getenv("GITHUB_REPOSITORY", "unknown/repo")
+    owner = repository.split("/", 1)[0] if "/" in repository else "ImperaZim"
     name = os.getenv("RELEASE_NAME", repository.rsplit("/", 1)[-1])
     version = os.getenv("RELEASE_VERSION", "").strip()
     tag = os.getenv("RELEASE_TAG", os.getenv("GITHUB_REF_NAME", "")).strip()
     assets = [asset.strip() for asset in os.getenv("RELEASE_ASSETS", "").split(",") if asset.strip()]
-    release_url = f"{repository_url(repository)}/releases/tag/{tag}" if tag else repository_url(repository)
-    title = f"Release: {name}" + (f" {version}" if version else "")
-
-    fields = [
-        {"name": "Repository", "value": repository, "inline": True},
-        {"name": "Tag", "value": tag or "unknown", "inline": True},
-        {"name": "Trigger", "value": os.getenv("GITHUB_EVENT_NAME", "unknown"), "inline": True},
+    repo_url = repository_url(repository)
+    release_url = f"{repo_url}/releases/tag/{tag}" if tag else repo_url
+    display_version = version or tag or "release"
+    title = f"[{name}:{display_version}] release assets published"
+    description = [
+        f"Repository: [{repository}]({repo_url})",
+        f"Tag: [`{tag or 'unknown'}`]({release_url})",
+        "",
+        "Release assets were published and verified.",
     ]
     if assets:
-        fields.append({"name": "Assets", "value": "\n".join(f"`{Path(asset).name}`" for asset in assets), "inline": False})
+        description.extend(["", "Assets:"])
+        description.extend(f"- `{Path(asset).name}`" for asset in assets)
 
     return {
-        "username": "ImperaZim Releases",
+        "username": owner,
+        "avatar_url": github_avatar_url(owner),
         "embeds": [
             {
+                "author": {
+                    "name": owner,
+                    "url": f"https://github.com/{owner}",
+                    "icon_url": github_avatar_url(owner),
+                },
                 "title": title,
                 "url": release_url,
-                "description": "Release assets were published and verified.",
+                "description": "\n".join(description),
                 "color": 0x5865F2,
-                "fields": fields,
+                "footer": {"text": f"triggered by {os.getenv('GITHUB_ACTOR', 'GitHub Actions')}"},
             }
         ],
     }
@@ -122,6 +155,43 @@ def read_event() -> dict[str, object]:
 
 def repository_url(repository: str) -> str:
     return f"{os.getenv('GITHUB_SERVER_URL', 'https://github.com')}/{repository}"
+
+
+def branch_url(repository: str, branch: str) -> str:
+    if branch == "":
+        return repository_url(repository)
+    return f"{repository_url(repository)}/tree/{branch}"
+
+
+def commit_url(repository_url_value: str, sha: str) -> str:
+    if sha == "":
+        return repository_url_value
+    return f"{repository_url_value}/commit/{sha}"
+
+
+def github_avatar_url(owner: str) -> str:
+    return f"https://github.com/{owner}.png?size=128"
+
+
+def format_commit_lines(commits: list[object], repo_url: str, fallback_author: str) -> list[str]:
+    lines = []
+    for commit in commits[:5]:
+        if not isinstance(commit, dict):
+            continue
+        sha = str(commit.get("id", ""))[:7]
+        full_sha = str(commit.get("id", ""))
+        message = first_line(str(commit.get("message", "No commit message.")), 160)
+        url = str(commit.get("url", "")) or commit_url(repo_url, full_sha)
+        author_data = commit.get("author", {})
+        author = fallback_author
+        if isinstance(author_data, dict):
+            author = str(author_data.get("username") or author_data.get("name") or fallback_author)
+        lines.append(f"[`{sha}`]({url}) {message} - {author}")
+
+    remaining = len(commits) - len(lines)
+    if remaining > 0:
+        lines.append(f"...and {remaining} more.")
+    return lines
 
 
 def first_line(value: str, max_length: int) -> str:
