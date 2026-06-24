@@ -11,7 +11,7 @@ from pathlib import Path
 
 def main() -> int:
     kind = sys.argv[1] if len(sys.argv) > 1 else os.getenv("NOTIFICATION_KIND", "")
-    webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
+    webhook_url = normalize_webhook_url(os.getenv("DISCORD_WEBHOOK_URL", ""))
     if webhook_url == "":
         print("Discord notification skipped: webhook secret is not configured.")
         return 0
@@ -37,6 +37,13 @@ def main() -> int:
         print(f"Discord notification failed: {error.reason}; release/build will continue.")
 
     return 0
+
+
+def normalize_webhook_url(webhook_url: str) -> str:
+    webhook_url = webhook_url.strip()
+    if webhook_url.endswith("/github"):
+        return webhook_url[:-7]
+    return webhook_url
 
 
 def build_push_payload() -> dict[str, object]:
