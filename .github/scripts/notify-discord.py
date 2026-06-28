@@ -12,11 +12,16 @@ from pathlib import Path
 def main() -> int:
     kind = sys.argv[1] if len(sys.argv) > 1 else os.getenv("NOTIFICATION_KIND", "")
     webhook_url = normalize_webhook_url(os.getenv("DISCORD_WEBHOOK_URL", ""))
-    if webhook_url == "":
+    dry_run = is_truthy(os.getenv("DISCORD_DRY_RUN", ""))
+    if webhook_url == "" and not dry_run:
         print("Discord notification skipped: webhook secret is not configured.")
         return 0
 
-    payload = build_release_payload() if kind == "release" else build_push_payload()
+    payload = build_payload(kind)
+    if dry_run:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
+
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
         webhook_url,
@@ -46,6 +51,14 @@ def normalize_webhook_url(webhook_url: str) -> str:
     return webhook_url
 
 
+def build_payload(kind: str) -> dict[str, object]:
+    if kind == "release":
+        return build_release_payload()
+    if kind in {"test", "manual", "workflow_dispatch"}:
+        return build_test_payload()
+    return build_push_payload()
+
+
 def build_push_payload() -> dict[str, object]:
     event = read_event()
     repository = os.getenv("GITHUB_REPOSITORY", event.get("repository", {}).get("full_name", "unknown/repo"))
@@ -66,10 +79,7 @@ def build_push_payload() -> dict[str, object]:
     if count == 0:
         title = f"[{repo_name}:{branch or 'unknown'}] new push"
 
-    lines = [
-        f"Repository: [{repository}]({repo_url}) | Branch: [{branch or 'unknown'}]({branch_url(repository, branch)})",
-        "",
-    ]
+    lines = []
     commit_lines = format_commit_lines(commits, repo_url, actor)
     if commit_lines:
         lines.extend(commit_lines)
@@ -86,7 +96,16 @@ def build_push_payload() -> dict[str, object]:
         "url": compare_url,
         "description": "\n".join(lines),
         "color": 0x2F81F7,
-        "footer": {"text": f"pushed by {actor}"},
+        "fields": compact_fields(
+            [
+                field("Repository", f"[{repository}]({repo_url})", True),
+                field("Branch", f"[{branch or 'unknown'}]({branch_url(repository, branch)})", True),
+                field("Actor", f"[{actor}](https://github.com/{actor})", True),
+                field("Commits", str(count), True),
+                field("Head", f"[`{head_sha}`]({commit_url(repo_url, str(head.get('id', os.getenv('GITHUB_SHA', ''))))})", True),
+            ]
+        ),
+        "footer": {"text": "Repository push notification"},
     }
     timestamp = str(head.get("timestamp", "")).strip()
     if timestamp != "":
@@ -111,9 +130,6 @@ def build_release_payload() -> dict[str, object]:
     display_version = version or tag or "release"
     title = f"[{name}:{display_version}] release assets published"
     description = [
-        f"Repository: [{repository}]({repo_url})",
-        f"Tag: [`{tag or 'unknown'}`]({release_url})",
-        "",
         "Release assets were published and verified.",
     ]
     if assets:
@@ -134,7 +150,48 @@ def build_release_payload() -> dict[str, object]:
                 "url": release_url,
                 "description": "\n".join(description),
                 "color": 0x5865F2,
+                "fields": compact_fields(
+                    [
+                        field("Repository", f"[{repository}]({repo_url})", True),
+                        field("Tag", f"[`{tag or 'unknown'}`]({release_url})", True),
+                        field("Actor", f"[{os.getenv('GITHUB_ACTOR', 'GitHub Actions')}](https://github.com/{os.getenv('GITHUB_ACTOR', 'github-actions')})", True),
+                    ]
+                ),
                 "footer": {"text": f"triggered by {os.getenv('GITHUB_ACTOR', 'GitHub Actions')}"},
+            }
+        ],
+    }
+
+
+def build_test_payload() -> dict[str, object]:
+    repository = os.getenv("GITHUB_REPOSITORY", "unknown/repo")
+    owner = repository.split("/", 1)[0] if "/" in repository else os.getenv("GITHUB_ACTOR", "ImperaZim")
+    actor = os.getenv("GITHUB_ACTOR", "GitHub Actions")
+    branch = os.getenv("GITHUB_REF_NAME", "manual")
+    repo_url = repository_url(repository)
+
+    return {
+        "username": owner,
+        "avatar_url": github_avatar_url(owner),
+        "embeds": [
+            {
+                "author": {
+                    "name": owner,
+                    "url": f"https://github.com/{owner}",
+                    "icon_url": github_avatar_url(owner),
+                },
+                "title": f"[{repository.rsplit('/', 1)[-1]}:{branch}] notification test",
+                "url": repo_url,
+                "description": "Manual repository notification test from GitHub Actions.",
+                "color": 0x3FB950,
+                "fields": compact_fields(
+                    [
+                        field("Repository", f"[{repository}]({repo_url})", True),
+                        field("Branch", f"[{branch}]({branch_url(repository, branch)})", True),
+                        field("Actor", f"[{actor}](https://github.com/{actor})", True),
+                    ]
+                ),
+                "footer": {"text": "Repository notification test"},
             }
         ],
     }
@@ -173,6 +230,20 @@ def github_avatar_url(owner: str) -> str:
     return f"https://github.com/{owner}.png?size=128"
 
 
+def field(name: str, value: str, inline: bool = False) -> dict[str, object]:
+    return {"name": name, "value": value if value.strip() else "unknown", "inline": inline}
+
+
+def compact_fields(fields: list[dict[str, object]]) -> list[dict[str, object]]:
+    compacted = []
+    for item in fields:
+        value = str(item.get("value", "")).strip()
+        if value == "":
+            continue
+        compacted.append(item)
+    return compacted[:10]
+
+
 def format_commit_lines(commits: list[object], repo_url: str, fallback_author: str) -> list[str]:
     lines = []
     for commit in commits[:5]:
@@ -197,6 +268,10 @@ def format_commit_lines(commits: list[object], repo_url: str, fallback_author: s
 def first_line(value: str, max_length: int) -> str:
     line = value.splitlines()[0] if value.splitlines() else value
     return line if len(line) <= max_length else line[: max_length - 3] + "..."
+
+
+def is_truthy(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "on", "dry-run", "dryrun"}
 
 
 if __name__ == "__main__":

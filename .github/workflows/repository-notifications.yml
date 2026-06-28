@@ -14,17 +14,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  push:
-    name: Notify push channel
+  notify:
+    name: Notify repository channel
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Send Discord push notification
+      - name: Send Discord repository notification
+        continue-on-error: true
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_PUSH_WEBHOOK_URL }}
-          NOTIFICATION_KIND: push
-        run: python3 .github/scripts/notify-discord.py push
+          NOTIFICATION_KIND: ${{ github.event_name == 'workflow_dispatch' && 'test' || 'push' }}
+        run: python3 .github/scripts/notify-discord.py "$NOTIFICATION_KIND"
